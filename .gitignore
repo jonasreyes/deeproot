@@ -1,0 +1,12 @@
+# Carpetas a ignorar
+backup/
+doc/
+storage/
+.idea/
+.venv/
+
+# Archivos a ignorar
+deeproot.json
+
+# Ignorar todo archivo XML
+*.xml
