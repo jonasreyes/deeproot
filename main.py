@@ -12,11 +12,12 @@ def cargar_configuracion():
         with open(CONFIG_FILE, "r") as f:
             return json.load(f)
     return {
-        "usar_enter": True,
+        "usar_enter": False,
         "modelo": "deepseek-chat",
         "modo_oscuro": False,
         "api_key": "",
-        "url_base": "https://api.deepseek.com"
+        "url_base": "",
+        "stream": True
     }
 
 # Guardar configuración
@@ -24,10 +25,11 @@ def guardar_configuracion(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f)
 
+# Interfáz gráfica con Flet
 #Configuración de la API de DeepSeek
 APP_NAME = "DeepRoot"
 APP_VERSION = "Alfa 0.0.1 - 2025"
-APP_LEMA = "¡Un cliente API de DeepSeek!"
+APP_LEMA = "Cliente DeepSeek API"
 AUTOR_NAME = "Jonás A. Reyes C."
 AUTOR_NICK = "@jonasroot"
 AUTOR_CONTACT = "Telegram: @jonasreyes"
@@ -44,17 +46,18 @@ def enviar_consulta_a_deepseek(prompt, modelo, api_key, url_base):
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt},
             ],
-            stream=False
+            stream=True
         )
         return response.choices[0].message.content
     except Exception as e:
         return f"Error: {str(e)}" 
+    # Cargar configuración
+config = cargar_configuracion()
 
-# Interfáz gráfica con Flet
 def main(page: ft.Page):
 
-    # Cargar configuración
-    config = cargar_configuracion()
+
+
 
     # Configuración del theme inicial
     page.adaptive = True
@@ -63,31 +66,29 @@ def main(page: ft.Page):
     # page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.horizontal_alignment = "center"
     page.vertical_alignment = "center"
-    page.window_width = 800
-    page.window_height = 500
+    page.window_width = 400
+    page.window_height = 800
     page.theme_mode = ft.ThemeMode.DARK if config["modo_oscuro"] else ft.ThemeMode.LIGHT
     if not config["modo_oscuro"]:
         page.theme = ft.Theme(color_scheme=ft.ColorScheme(primary=ft.colors.BLACK, background=ft.colors.BLACK))
 
     page.title = f"{APP_NAME} {APP_LEMA}"
-    page.snack_bar = ft.SnackBar(
-        content=ft.Text("Texto copiado al portapapeles."),
-        action="Cerrar",
-        behavior=ft.SnackBarBehavior.FLOATING,
-        duration=2000,
-        width=200
-    )
 
     # Componentes de la interfáz
     input_prompt = ft.TextField(
         label="Escribe tu consulta",
         autofocus=True,
-        multiline=True,
+        expand=True,
         min_lines=2,
-        max_lines=5,
+        max_lines=4,
         on_submit=lambda e: on_submit(e) if config["usar_enter"] else False
     )
-    output_response = ft.TextField(label="Respuesta:", multiline=True, min_lines=5, max_lines=10, read_only=True)
+    output_response = ft.TextField(
+        label="Respuesta:", 
+        multiline=True, 
+        min_lines=5, 
+        expand=True,
+        read_only=True)
 
     # switch para enviar con enter
     switch_enter = ft.Switch(
@@ -112,27 +113,22 @@ def main(page: ft.Page):
     )
 
     # Campos de configuración
-    campo_api_key = ft.TextField(label="API Key", value=config["api_key"], password=True, can_reveal_password=True)
+    campo_api_key = ft.TextField(label="API Key", 
+                                 value=config["api_key"], 
+                                 password=True, 
+                                 can_reveal_password=True)
     campo_url_base = ft.TextField(label="URL Base", value=config["url_base"])
 
 
-    # --------- Botones --------------------
-    btn_enviar = ft.ElevatedButton("Enviar", icon=ft.icons.SEND, visible=not config["usar_enter"])
-    btn_copiar_prompt = ft.ElevatedButton("Copiar",icon=ft.icons.COPY)
-    btn_reset_prompt = ft.ElevatedButton("Restablecer", icon=ft.icons.RESTORE,)
-    btn_exportar_prompt = ft.ElevatedButton("Exportar", icon=ft.icons.DOWNLOAD, disabled=True)
-    btn_copiar_resp = ft.ElevatedButton("Copiar",icon=ft.icons.COPY)
-    btn_resetear_todo = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE)
-    btn_cerrar = ft.ElevatedButton("Salir", icon=ft.icons.CLOSE)
-    # ---------- Fin Botones ----------------
 
     # Función Guardar Configuración Avanzada
     def guardar_configuracion_avanzada(e):
         config["api_key"] = campo_api_key.value
         config["url_base"] = campo_url_base.value
         guardar_configuracion(config)
-        page.snack_bar.content = ft.Text("Configuración Guardada")
-        page.snack_bar.open = True
+        page.snack_bar = ft.SnackBar(ft.Text("¡Configuración Guardada!"))  # Crea el SnackBar
+        page.snack_bar.bgcolor=ft.colors.GREEN
+        page.snack_bar.open = True  # Abre el SnackBar
         page.update()
 
     # espacio configuración
@@ -145,16 +141,6 @@ def main(page: ft.Page):
             ft.Divider(),
             ft.Text("Modelo:", size=16),
             lista_modelos,
-            ft.Row(
-                [
-                    ft.Text("Modo oscuro:", size=16),
-                    switch_modo_oscuro,
-                    ft.Text("Enviar con Enter:", size=16),
-                    switch_enter,
-                ],
-                alignment=ft.MainAxisAlignment.START,
-                spacing=10
-            ),
         ],
         spacing=10
     )
@@ -165,8 +151,14 @@ def main(page: ft.Page):
         config[clave] = valor
         guardar_configuracion(config)
         if clave == "usar_enter":
+            input_prompt.multiline= not valor
             btn_enviar.visible = not valor
-        page.update()
+            page.update()
+        else:
+            input_prompt.multiline=True
+            btn_enviar.visible = True
+            page.update()
+
 
     # Función para cambiar entre modo oscuro y día
     def cambiar_modo(modo_oscuro):
@@ -224,47 +216,81 @@ def main(page: ft.Page):
     def copiar_prompt(e):
         #if input_prompt.value:
         page.set_clipboard(input_prompt.value)
-        page.snack_bar.open = True
-        page.update()
-
-    def exportar_prompt(e):
-        pass
+        page.snack_bar = ft.SnackBar(ft.Text("Prompt copiado!"))  # Crea el SnackBar
+        page.snack_bar.open = True  # Abre el SnackBar
+        page.update()  # Actualiza la página para mostrar el SnackBar
 
 
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
         #if output_response.value:
-        page.set_clipboard(output_response.value) # Copiamos al portapapeles
-        page.snack_bar.open = True
-        page.update()
+        page.set_clipboard(output_response.value)
+        page.snack_bar = ft.SnackBar(ft.Text("Respuesta copiada!"))  # Crea el SnackBar
+        page.snack_bar.open = True  # Abre el SnackBar
+        page.update()  # Actualiza la página para mostrar el SnackBar
+
+    # --------- Botones --------------------
+    btn_enviar = ft.ElevatedButton("Enviar", icon=ft.icons.SEND, visible=not config["usar_enter"])
+    btn_copiar_prompt = ft.ElevatedButton("Copiar",icon=ft.icons.COPY, on_click=copiar_prompt)
+    btn_reset_prompt = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE,)
+    btn_copiar_resp = ft.ElevatedButton("Copiar",icon=ft.icons.COPY, on_click=copiar_respuesta)
+    btn_resetear_todo = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE)
+    btn_cerrar = ft.ElevatedButton("Salir", icon=ft.icons.CLOSE)
+    # ---------- Fin Botones ----------------
+
 
     # Asignación de Eventos a los botones
     btn_enviar.on_click = on_submit
     btn_reset_prompt.on_click = reset_prompt
-    btn_copiar_prompt.on_click = copiar_prompt
-    btn_exportar_prompt.on_click = exportar_prompt
-    btn_copiar_resp.on_click = copiar_respuesta
     btn_resetear_todo.on_click = resetear_campos
     btn_cerrar.on_click = cerrar_click
 
+    fila_encabezado = ft.Container(
+        content = ft.Column(
+            controls = [
+                ft.Text(f"{APP_NAME}", size=48, weight=ft.FontWeight.BOLD),
+                ft.Container(
+                    content=ft.Text(f"{APP_LEMA}, Versión: {APP_VERSION}")
+                )
+            ]
+        ),
+        bgcolor=ft.colors.BLUE_50,
+        padding=20,
+        width=page.width
+    )
 
+    campos_prompt = ft.Row(
+        controls = [
+            input_prompt,
+            btn_enviar
+        ],
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+        )
+
+    fila_prompt = ft.Container(
+        content =  campos_prompt
+    )
 
     # Agregamos componentes a la página
     page.add(
         ft.Column(
             [
-                ft.Text(f"{APP_NAME}", size=48, weight=ft.FontWeight.BOLD),
-                ft.Text(f"{APP_LEMA}", size=24),
+                fila_encabezado,
                 output_response,
                 ft.Row([btn_copiar_resp,btn_resetear_todo]),
                 ft.Divider(),
-                ft.Column(
-                    [input_prompt],
-                    spacing=10
+                fila_prompt,
+                ft.Row(
+                    [btn_copiar_prompt, btn_reset_prompt,ft.Text("Enviar con Enter"), switch_enter],
+                    spacing=5
                 ),
                 ft.Row(
-                    [btn_enviar, btn_copiar_prompt, btn_reset_prompt,btn_exportar_prompt],
-                    spacing=5
+                    [
+                        ft.Text("Modo oscuro:", size=16),
+                        switch_modo_oscuro,
+                    ],
+                    alignment=ft.MainAxisAlignment.START,
+                    spacing=10
                 ),
                 ft.Tabs(
                     selected_index=0,
@@ -277,7 +303,8 @@ def main(page: ft.Page):
                         ], spacing=10)),
                         ft.Tab(text="Configuración", content=espacio_configuracion),
                     ]
-                )
+                ),
+                
             ],
             spacing = 20,
             scroll = True,
