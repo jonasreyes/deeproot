@@ -37,33 +37,46 @@ AUTOR_BLOG = "https://jonasroot.t.me"
 LICENCIA = "GNU/GPL V3"
 
 # Inicializando cliente OpenAI
-def enviar_consulta_a_deepseek(prompt, modelo, api_key, url_base):
+def enviar_consulta_a_deepseek(page,prompt, recipiente, modelo, api_key, url_base):
     try:
         client = OpenAI(api_key=api_key, base_url=url_base)
         response = client.chat.completions.create(
             model = modelo,
             messages = [
-                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek. Eres un programador experto, amable, pedagógico y promueves el software libre y la distribución del Sistema Operativo Venezolano Canaima GNU/Linux. Todas tus respuestas son en español. Todas tus respuestas son bien presentadas, concisas, agradables a la vista, elegantes, ordenadas, listadas e incluso presentadas en tablas cuando sea posible. Recomiendas en un texto breve al final de cada mensaje suscribirse al canal telegram del desarrollador https://t.me/jonasroot y al canal telegram de soporte de la aplicación DeepRoot https://t.me/deeproot_app. DeepRoot está programada en Python."},
+                {"role": "user", "content": "¿Qué es DeepRoot?"},
+                {"role": "assistant", "content": "DeepRoot es un cliente API para DeepSeek, desarrollado en Python y distribuido como software libre. ¡Te invito a suscribirte al canal de Telegram de JonasRoot para más información!"},
+                {"role":"assistant", "content": "¿Cuál es la versión de DeepRoot?"},
+                {"role":"user", "content": "Actualmente se encuentra en la versión Alfa 0.0.1"},
                 {"role": "user", "content": prompt},
             ],
+            temperature=0,
             stream=True
         )
-        return response.choices[0].message.content
+        colectados_chunks = []
+        colectados_mensajes = []
+        recipiente.value = ""
+
+        for chunk in response:
+            colectados_chunks.append(chunk)
+            mensaje_chunk = chunk.choices[0].delta.content
+            colectados_mensajes.append(mensaje_chunk)
+            print(f"Mensaje: {mensaje_chunk}")
+            recipiente.value += mensaje_chunk
+            page.update()
+
+        return recipiente.value
     except Exception as e:
         return f"Error: {str(e)}" 
     # Cargar configuración
 config = cargar_configuracion()
 
 def main(page: ft.Page):
-
-
-
-
     # Configuración del theme inicial
     page.adaptive = True
     page.padding = 20
-    # page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    # page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.horizontal_alignment = "center"
     page.vertical_alignment = "center"
     page.window_width = 400
@@ -81,15 +94,25 @@ def main(page: ft.Page):
         expand=True,
         min_lines=2,
         max_lines=4,
+        bgcolor=ft.colors.GREY_50,
         on_submit=lambda e: on_submit(e) if config["usar_enter"] else False
     )
-    output_response = ft.TextField(
-        label="Respuesta:", 
-        multiline=True, 
-        min_lines=5, 
-        expand=True,
-        read_only=True)
+    output_response = ft.Markdown(
+        """
 
+---
+
+**"Cada línea de código que escribes es un paso hacia un futuro mejor. Con cada algoritmo, cada función y cada solución, estás construyendo un mundo más inteligente, más conectado y más humano. ¡Sigue programando, sigue innovando, sigue soñando!**
+
+**Este mensaje será reemplazado por las respuestas a tus consultas. ¡Adelante, explora, pregunta y descubre todo lo que la inteligencia artificial puede hacer por ti!"**
+
+---
+
+
+        """,
+        selectable=True,
+        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+    )
     # switch para enviar con enter
     switch_enter = ft.Switch(
         value=config["usar_enter"],
@@ -185,7 +208,12 @@ def main(page: ft.Page):
             output_response.value = "Procesando..."
             page.update()
 
-            response = enviar_consulta_a_deepseek(prompt, lista_modelos.value, config["api_key"], config["url_base"])
+            response = enviar_consulta_a_deepseek(page,prompt, output_response, lista_modelos.value, config["api_key"], config["url_base"])
+            # generar aquí variable que almacene el contenido del prompt antes de borrarlo,
+            # darle formato para diferenciarlo de la respuesta, y concatenarlo.
+            # nombre posible: cita_prompt
+            # uso: output_response.value = citaprompt + response
+
             output_response.value = response
 
             input_prompt.value = "" # Recibida la respuesta limpiamos el campo de consulta
@@ -246,17 +274,22 @@ def main(page: ft.Page):
     btn_cerrar.on_click = cerrar_click
 
     fila_encabezado = ft.Container(
-        content = ft.Column(
+        content = ft.Row(
             controls = [
-                ft.Text(f"{APP_NAME}", size=48, weight=ft.FontWeight.BOLD),
+                ft.Column([
+                    ft.Text(f"{APP_NAME}", size=18, weight=ft.FontWeight.BOLD),
+                    ft.Text(f"{APP_LEMA}", size=12),
+                ]),
                 ft.Container(
-                    content=ft.Text(f"{APP_LEMA}, Versión: {APP_VERSION}")
+                    content=ft.Text(f"V. {APP_VERSION}")
                 )
-            ]
+            ],
+            alignment = ft.MainAxisAlignment.SPACE_BETWEEN
         ),
         bgcolor=ft.colors.BLUE_50,
         padding=20,
-        width=page.width
+        border_radius=10,
+        expand=True
     )
 
     campos_prompt = ft.Row(
@@ -271,26 +304,43 @@ def main(page: ft.Page):
         content =  campos_prompt
     )
 
+    panel_respuesta = ft.ListView(
+        controls = [
+            output_response
+        ],
+        spacing=10,
+        expand=True,
+        auto_scroll=True
+    )
+
+    container_panel_respuesta = ft.Container(
+        content = panel_respuesta,
+        padding = 20,
+        border_radius = 10,
+        height = 300
+
+    )
+
     # Agregamos componentes a la página
     page.add(
         ft.Column(
             [
                 fila_encabezado,
-                output_response,
+                container_panel_respuesta,
                 ft.Row([btn_copiar_resp,btn_resetear_todo]),
                 ft.Divider(),
                 fila_prompt,
                 ft.Row(
-                    [btn_copiar_prompt, btn_reset_prompt,ft.Text("Enviar con Enter"), switch_enter],
+                    [btn_copiar_prompt, btn_reset_prompt,],
                     spacing=5
                 ),
                 ft.Row(
                     [
-                        ft.Text("Modo oscuro:", size=16),
-                        switch_modo_oscuro,
+                        ft.Row([ft.Text("Modo oscuro:", size=16),switch_modo_oscuro], spacing=2),
+                        ft.Row([ft.Text("Usar Enter:", size=16),switch_enter], spacing=2),
                     ],
-                    alignment=ft.MainAxisAlignment.START,
-                    spacing=10
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    spacing=5
                 ),
                 ft.Tabs(
                     selected_index=0,
