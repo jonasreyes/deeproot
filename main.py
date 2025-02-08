@@ -2,6 +2,7 @@ import flet as ft
 from openai import OpenAI, api_key
 import json
 import os
+from modules.themes import theme_claro, theme_oscuro 
 
 # ARCHIVO DE CONFIGURACIÓN
 CONFIG_FILE = "deeproot.json"
@@ -14,7 +15,7 @@ def cargar_configuracion():
     return {
         "usar_enter": False,
         "modelo": "deepseek-chat",
-        "modo_oscuro": False,
+        "theme_mode": "theme_claro",
         "api_key": "",
         "url_base": "",
         "stream": True
@@ -37,17 +38,13 @@ AUTOR_BLOG = "https://jonasroot.t.me"
 LICENCIA = "GNU/GPL V3"
 
 # Inicializando cliente OpenAI
-def enviar_consulta_a_deepseek(page,prompt, recipiente, modelo, api_key, url_base):
+def enviar_consulta_a_deepseek(page, prompt, recipiente, modelo, api_key, url_base):
     try:
         client = OpenAI(api_key=api_key, base_url=url_base)
         response = client.chat.completions.create(
             model = modelo,
             messages = [
-                {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek. Eres un programador experto, amable, pedagógico y promueves el software libre y la distribución del Sistema Operativo Venezolano Canaima GNU/Linux. Todas tus respuestas son en español. Todas tus respuestas son bien presentadas, concisas, agradables a la vista, elegantes, ordenadas, listadas e incluso presentadas en tablas cuando sea posible. Recomiendas en un texto breve al final de cada mensaje suscribirse al canal telegram del desarrollador https://t.me/jonasroot y al canal telegram de soporte de la aplicación DeepRoot https://t.me/deeproot_app. DeepRoot está programada en Python."},
-                {"role": "user", "content": "¿Qué es DeepRoot?"},
-                {"role": "assistant", "content": "DeepRoot es un cliente API para DeepSeek, desarrollado en Python y distribuido como software libre. ¡Te invito a suscribirte al canal de Telegram de JonasRoot para más información!"},
-                {"role":"assistant", "content": "¿Cuál es la versión de DeepRoot?"},
-                {"role":"user", "content": "Actualmente se encuentra en la versión Alfa 0.0.1"},
+                {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek."},
                 {"role": "user", "content": prompt},
             ],
             temperature=0,
@@ -55,17 +52,17 @@ def enviar_consulta_a_deepseek(page,prompt, recipiente, modelo, api_key, url_bas
         )
         colectados_chunks = []
         colectados_mensajes = []
-        recipiente.value = ""
+        recipiente = ""
 
         for chunk in response:
             colectados_chunks.append(chunk)
             mensaje_chunk = chunk.choices[0].delta.content
             colectados_mensajes.append(mensaje_chunk)
             print(f"Mensaje: {mensaje_chunk}")
-            recipiente.value += mensaje_chunk
+            recipiente += mensaje_chunk
             page.update()
 
-        return recipiente.value
+        return recipiente
     except Exception as e:
         return f"Error: {str(e)}" 
     # Cargar configuración
@@ -73,21 +70,47 @@ config = cargar_configuracion()
 
 def main(page: ft.Page):
     # Configuración del theme inicial
-    page.adaptive = True
-    page.padding = 20
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.horizontal_alignment = "center"
-    page.vertical_alignment = "center"
     page.window_width = 400
     page.window_height = 800
-    page.theme_mode = ft.ThemeMode.DARK if config["modo_oscuro"] else ft.ThemeMode.LIGHT
-    if not config["modo_oscuro"]:
-        page.theme = ft.Theme(color_scheme=ft.ColorScheme(primary=ft.colors.BLACK, background=ft.colors.BLACK))
+    page.padding = 20
+    page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
+    page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
 
     page.title = f"{APP_NAME} {APP_LEMA}"
+    page.theme = ft.Theme(
+        color_scheme_seed=ft.Colors.YELLOW,
+    )
 
     # Componentes de la interfáz
+
+    # Barra de Aplicación
+    barra_app = ft.AppBar(
+        title=ft.Text(APP_NAME, size=22, color="blue400", weight=ft.FontWeight.W_900),
+        bgcolor="#1440AD",
+        #bgcolor=ft.Colors.BLUE,
+        actions=[
+            ft.IconButton(ft.icons.DARK_MODE if not page.theme_mode == ft.ThemeMode.LIGHT else ft.icons.LIGHT_MODE,
+                          on_click=lambda e: cambiar_theme(),
+                          tooltip="Cambiar Tema"
+                          ), 
+        ]
+    )
+    page.appbar = barra_app
+
+    barra_pie = ft.BottomAppBar(
+        bgcolor=ft.Colors.BLUE,
+        shape=ft.NotchShape.CIRCULAR,
+        content=ft.Row(
+            controls=[
+                ft.IconButton(icon=ft.Icons.MENU, icon_color=ft.Colors.WHITE),
+                ft.Container(expand=True),
+                ft.IconButton(icon=ft.Icons.SEARCH, icon_color=ft.Colors.WHITE),
+                ft.IconButton(icon=ft.Icons.FAVORITE, icon_color=ft.Colors.WHITE),
+            ]
+        ),
+    )
+    page.bottom_appbar=barra_app
+
     input_prompt = ft.TextField(
         label="Escribe tu consulta",
         autofocus=True,
@@ -97,9 +120,7 @@ def main(page: ft.Page):
         bgcolor=ft.colors.GREY_50,
         on_submit=lambda e: on_submit(e) if config["usar_enter"] else False
     )
-    output_response = ft.Markdown(
-        """
-
+    output_response = """
 ---
 
 **"Cada línea de código que escribes es un paso hacia un futuro mejor. Con cada algoritmo, cada función y cada solución, estás construyendo un mundo más inteligente, más conectado y más humano. ¡Sigue programando, sigue innovando, sigue soñando!**
@@ -107,22 +128,19 @@ def main(page: ft.Page):
 **Este mensaje será reemplazado por las respuestas a tus consultas. ¡Adelante, explora, pregunta y descubre todo lo que la inteligencia artificial puede hacer por ti!"**
 
 ---
+    """
 
-
-        """,
-        selectable=True,
-        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
-    )
     # switch para enviar con enter
     switch_enter = ft.Switch(
         value=config["usar_enter"],
         on_change=lambda e: actualizar_configuracion("usar_enter", e.control.value)
     )
 
+    # theme_switch
     # switch modo oscuro
-    switch_modo_oscuro = ft.Switch(
-        value=config["modo_oscuro"],
-        on_change=lambda e: cambiar_modo(e.control.value)
+    switch_theme = ft.Switch(
+        value=config["theme_mode"],
+        on_change=lambda e: cambiar_theme()
     )
 
     # Lista desplegable para seleccionar el modelo
@@ -182,45 +200,53 @@ def main(page: ft.Page):
             btn_enviar.visible = True
             page.update()
 
-
-    # Función para cambiar entre modo oscuro y día
-    def cambiar_modo(modo_oscuro):
-        config["modo_oscuro"] = modo_oscuro
-        guardar_configuracion(config)
-        page.theme_mode = ft.ThemeMode.DARK if modo_oscuro else ft.ThemeMode.LIGHT
-        if not modo_oscuro:
-            # page.theme = ft.Theme(color_scheme=ft.ColorScheme(primary=ft.colors.BLACK, background=ft.colors.BLACK))
-            page.theme = ft.Theme(color_scheme_seed=ft.Colors.GREEN)
-        else:
-            page.theme = ft.Theme(color_scheme_seed=ft.Colors.AMBER)
+# Función de aplicación del theme
+    def aplicar_theme(theme):
+        page.bgcolor = theme["background_color"]
         page.update()
 
+    def cambiar_theme():
+        if config["theme_mode"] == "theme_oscuro":
+            page.theme_mode = ft.ThemeMode.LIGHT
+            config["theme_mode"]="theme_claro"
+            #aplicar_theme(theme_claro)
+        else:
+            page.theme_mode = ft.ThemeMode.DARK
+            config["theme_mode"]="theme_oscuro"
+            #aplicar_theme(theme_oscuro)
+
+        guardar_configuracion(config)
+        page.update()
 
     # Construyendo componentes de la interfáz
     def on_submit(e):
         prompt = input_prompt.value
         if prompt.strip():
             if not config["api_key"]:
-                output_response.value = "Error: API Key no configurada."
+                output_response = "Error: API Key no configurada."
                 page.update()
                 return
 
-            output_response.value = "Procesando..."
+            output_response = "Procesando..."
             page.update()
 
-            response = enviar_consulta_a_deepseek(page,prompt, output_response, lista_modelos.value, config["api_key"], config["url_base"])
+            response = enviar_consulta_a_deepseek(page, prompt, output_response, lista_modelos.value, config["api_key"], config["url_base"])
             # generar aquí variable que almacene el contenido del prompt antes de borrarlo,
             # darle formato para diferenciarlo de la respuesta, y concatenarlo.
             # nombre posible: cita_prompt
             # uso: output_response.value = citaprompt + response
 
-            output_response.value = response
+            #output_response.value = response
+            #output_response.value = f"> {prompt}\n\n{response}"
+            output_response = ft.Markdown(f"> {prompt}\n\n{response}")
+            respuesta_area.controls.append(output_response)
+
 
             input_prompt.value = "" # Recibida la respuesta limpiamos el campo de consulta
             input_prompt.focus() # Limpiado el campo de consulta, procedemos a enfocar el campo (usabilidad)
             page.update()
         else:
-            output_response.value = "Por favor, escribe una consulta."
+            output_response = "Por favor, escribe una consulta."
             page.update()
 
 
@@ -236,7 +262,7 @@ def main(page: ft.Page):
 
     # Resetear todos los campos
     def resetear_campos(e):
-        output_response.value = ""
+        output_response = ""
         input_prompt.focus()
         page.update()
 
@@ -252,7 +278,7 @@ def main(page: ft.Page):
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
         #if output_response.value:
-        page.set_clipboard(output_response.value)
+        page.set_clipboard(output_response)
         page.snack_bar = ft.SnackBar(ft.Text("Respuesta copiada!"))  # Crea el SnackBar
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()  # Actualiza la página para mostrar el SnackBar
@@ -272,25 +298,6 @@ def main(page: ft.Page):
     btn_reset_prompt.on_click = reset_prompt
     btn_resetear_todo.on_click = resetear_campos
     btn_cerrar.on_click = cerrar_click
-
-    fila_encabezado = ft.Container(
-        content = ft.Row(
-            controls = [
-                ft.Column([
-                    ft.Text(f"{APP_NAME}", size=18, weight=ft.FontWeight.BOLD),
-                    ft.Text(f"{APP_LEMA}", size=12),
-                ]),
-                ft.Container(
-                    content=ft.Text(f"V. {APP_VERSION}")
-                )
-            ],
-            alignment = ft.MainAxisAlignment.SPACE_BETWEEN
-        ),
-        bgcolor=ft.colors.BLUE_50,
-        padding=20,
-        border_radius=10,
-        expand=True
-    )
 
     campos_prompt = ft.Row(
         controls = [
@@ -313,54 +320,51 @@ def main(page: ft.Page):
         auto_scroll=True
     )
 
-    container_panel_respuesta = ft.Container(
-        content = panel_respuesta,
-        padding = 20,
-        border_radius = 10,
-        height = 300
+    respuesta_area = ft.Column(
+        controls=[],
+        scroll=ft.ScrollMode.AUTO, # Habilita desplazamiento si es largo el contenido
+        expand=True, # Ocupa el espacio vertical disponible
+        alignment=ft.MainAxisAlignment.START,
+    )
 
+    container_panel_respuesta = ft.Container(
+        content = respuesta_area,
+        expand=True,
+        padding = 20,
+        border=ft.border.all(1, ft.colors.GREY_300),
+        border_radius = 10,
+    )
+
+    container_panel_configuracion = ft.Container(
+        content = ft.Tabs(
+            selected_index=0,
+            tabs=[
+                ft.Tab(text="Chat", content=ft.Column([
+                    ft.Row(
+                        [btn_cerrar],
+                        spacing=5,
+                    ),
+                ], spacing=10)),
+                ft.Tab(text="Configuración", content=espacio_configuracion),
+            ],
+        ),
     )
 
     # Agregamos componentes a la página
     page.add(
         ft.Column(
-            [
-                fila_encabezado,
+            controls = [
                 container_panel_respuesta,
                 ft.Row([btn_copiar_resp,btn_resetear_todo]),
                 ft.Divider(),
                 fila_prompt,
-                ft.Row(
-                    [btn_copiar_prompt, btn_reset_prompt,],
-                    spacing=5
-                ),
-                ft.Row(
-                    [
-                        ft.Row([ft.Text("Modo oscuro:", size=16),switch_modo_oscuro], spacing=2),
-                        ft.Row([ft.Text("Usar Enter:", size=16),switch_enter], spacing=2),
-                    ],
-                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                    spacing=5
-                ),
-                ft.Tabs(
-                    selected_index=0,
-                    tabs=[
-                        ft.Tab(text="Chat", content=ft.Column([
-                            ft.Row(
-                                [btn_cerrar],
-                                spacing=5,
-                            ),
-                        ], spacing=10)),
-                        ft.Tab(text="Configuración", content=espacio_configuracion),
-                    ]
-                ),
-                
+                ft.Row([btn_copiar_prompt, btn_reset_prompt,],spacing=5),
+                ft.Row([ft.Text("Usar Enter:", size=16),switch_enter], spacing=2),
             ],
-            spacing = 20,
-            scroll = True,
-            expand = True
-
-        )
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            expand=True
+        ),
+        barra_pie  
     )
 # Ejecución del Programa
 ft.app(target=main)

@@ -9,6 +9,7 @@ storage/
 # Archivos a ignorar
 deeproot.json
 main2.py
+main3.py
 
 # Ignorar todo archivo XML
 *.xml
