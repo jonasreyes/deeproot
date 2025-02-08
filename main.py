@@ -78,18 +78,18 @@ def main(page: ft.Page):
 
     page.title = f"{APP_NAME} {APP_LEMA}"
     page.theme = ft.Theme(
-        color_scheme_seed=ft.Colors.YELLOW,
+        color_scheme_seed=ft.Colors.BLUE_400,
     )
 
     # Componentes de la interfáz
 
     # Barra de Aplicación
     barra_app = ft.AppBar(
-        title=ft.Text(APP_NAME, size=22, color="blue400", weight=ft.FontWeight.W_900),
-        bgcolor="#1440AD",
-        #bgcolor=ft.Colors.BLUE,
+        title=ft.Text(APP_NAME, size=22, color="#1440AD", weight=ft.FontWeight.W_900),
+        #bgcolor="#1440AD",
+        bgcolor=ft.Colors.BLUE,
         actions=[
-            ft.IconButton(ft.icons.DARK_MODE if not page.theme_mode == ft.ThemeMode.LIGHT else ft.icons.LIGHT_MODE,
+            ft.IconButton(ft.Icons.SUNNY if not page.theme_mode == ft.ThemeMode.LIGHT else ft.icons.LIGHT_MODE,
                           on_click=lambda e: cambiar_theme(),
                           tooltip="Cambiar Tema"
                           ), 
@@ -171,21 +171,48 @@ def main(page: ft.Page):
         page.snack_bar.bgcolor=ft.colors.GREEN
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()
+    # Boton Guardar la Configuración Avanzada!
+    btn_guardar_conf = ft.ElevatedButton("Guardar", on_click=guardar_configuracion_avanzada)
 
-    # espacio configuración
-    espacio_configuracion = ft.Column(
+
+    # espacio de configuración del Campo de consulta o Prompt
+    tab_prompt = ft.Column(
         [
-            ft.Text("Configuración avanzada", size=20, weight=ft.FontWeight.BOLD),
-            campo_api_key,
-            campo_url_base,
-            ft.ElevatedButton("Guardar", on_click=guardar_configuracion_avanzada),
-            ft.Divider(),
-            ft.Text("Modelo:", size=16),
-            lista_modelos,
+            ft.Text("Enviar Prompt con tecla Enter", size=16, weight=ft.FontWeight.BOLD),
+            switch_enter
         ],
         spacing=10
     )
 
+
+    # espacio configuración API
+    tab_api = ft.Column(
+        [
+            ft.Text("Token de Acceso al Servicio API", size=16, weight=ft.FontWeight.BOLD),
+            campo_api_key,
+            btn_guardar_conf
+        ],
+        spacing=10
+    )
+
+    tab_url = ft.Column(
+        [
+            ft.Text("Dirección del Servicio API", size=16, weight=ft.FontWeight.BOLD),
+            campo_url_base,
+            btn_guardar_conf
+        ],
+        spacing=10
+    )
+
+    # panel configuración modelos
+    tab_modelo = ft.Column(
+        [
+            ft.Text("Seleccione un Modelo:", size=16, weight=ft.FontWeight.BOLD),
+            lista_modelos,
+            btn_guardar_conf
+        ],
+        spacing=10
+    )
 
     # Función para actualizar configuraciones
     def actualizar_configuracion(clave, valor):
@@ -238,7 +265,7 @@ def main(page: ft.Page):
 
             #output_response.value = response
             #output_response.value = f"> {prompt}\n\n{response}"
-            output_response = ft.Markdown(f"> {prompt}\n\n{response}")
+            output_response = ft.Markdown(f"> {prompt}\n\n{response}", selectable=True)
             respuesta_area.controls.append(output_response)
 
 
@@ -304,12 +331,15 @@ def main(page: ft.Page):
             input_prompt,
             btn_enviar
         ],
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        expand=True
         )
 
     fila_prompt = ft.Container(
         content =  campos_prompt
     )
+
+    fila_prompt_botones = ft.Row([btn_copiar_prompt, btn_reset_prompt,],spacing=10)
 
     panel_respuesta = ft.ListView(
         controls = [
@@ -320,51 +350,71 @@ def main(page: ft.Page):
         auto_scroll=True
     )
 
+    # botones del panel de respuesta
+    fila_panel_respuesta = ft.Row([btn_copiar_resp,btn_resetear_todo])
+
     respuesta_area = ft.Column(
         controls=[],
         scroll=ft.ScrollMode.AUTO, # Habilita desplazamiento si es largo el contenido
         expand=True, # Ocupa el espacio vertical disponible
-        alignment=ft.MainAxisAlignment.START,
+        alignment=ft.MainAxisAlignment.END,
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
     container_panel_respuesta = ft.Container(
         content = respuesta_area,
-        expand=True,
         padding = 20,
         border=ft.border.all(1, ft.colors.GREY_300),
         border_radius = 10,
+        expand=True,
+    )
+
+    # espacio alternativo para el Chat
+    tab_chat = ft.Column(
+        [
+            container_panel_respuesta,
+            fila_panel_respuesta,
+        ],
+        expand=True,
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
     container_panel_configuracion = ft.Container(
         content = ft.Tabs(
             selected_index=0,
             tabs=[
-                ft.Tab(text="Chat", content=ft.Column([
-                    ft.Row(
-                        [btn_cerrar],
-                        spacing=5,
-                    ),
-                ], spacing=10)),
-                ft.Tab(text="Configuración", content=espacio_configuracion),
+                ft.Tab(text="Chat", content=tab_chat),
+                ft.Tab(text="Prompt", content=tab_prompt),
+                ft.Tab(text="API Key", content=tab_api),
+                ft.Tab(text="URL Base", content=tab_url),
+                ft.Tab(text="Modelo", content=tab_modelo),
             ],
         ),
+        expand=True,
+    )
+
+    panel_prompt = ft.Column(
+        [
+            ft.Container(),
+            ft.Divider(),
+            fila_prompt,
+            fila_prompt_botones
+        ],
+        alignment = ft.MainAxisAlignment.END
     )
 
     # Agregamos componentes a la página
     page.add(
+        #container_panel_configuracion,
         ft.Column(
             controls = [
-                container_panel_respuesta,
-                ft.Row([btn_copiar_resp,btn_resetear_todo]),
-                ft.Divider(),
-                fila_prompt,
-                ft.Row([btn_copiar_prompt, btn_reset_prompt,],spacing=5),
-                ft.Row([ft.Text("Usar Enter:", size=16),switch_enter], spacing=2),
+                container_panel_configuracion,
+                panel_prompt
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-            expand=True
+            expand=True,
         ),
-        barra_pie  
+        #barra_pie  
     )
 # Ejecución del Programa
 ft.app(target=main)
