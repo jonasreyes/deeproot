@@ -1,8 +1,10 @@
 import flet as ft
-from openai import OpenAI, api_key
+import openai
+import asyncio
+from openai import OpenAIError, APIConnectionError, APIError
 import json
 import os
-from modules.themes import theme_claro, theme_oscuro 
+import modules.themes as themes
 
 # ARCHIVO DE CONFIGURACIÓN
 CONFIG_FILE = "deeproot.json"
@@ -26,8 +28,11 @@ def guardar_configuracion(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f)
 
+# Cargar configuración
+config = cargar_configuracion()
+
 # Interfáz gráfica con Flet
-#Configuración de la API de DeepSeek
+# Configuración de la API de DeepSeek
 APP_NAME = "DeepRoot"
 APP_VERSION = "Alfa 0.0.1 - 2025"
 APP_LEMA = "Cliente DeepSeek API"
@@ -36,39 +41,51 @@ AUTOR_NICK = "@jonasroot"
 AUTOR_CONTACT = "Telegram: @jonasreyes"
 AUTOR_BLOG = "https://jonasroot.t.me"
 LICENCIA = "GNU/GPL V3"
+CODE_THEME_CLARO = ft.MarkdownCodeTheme.GRUVBOX_LIGHT
+CODE_THEME_OSCURO = ft.MarkdownCodeTheme.GRUVBOX_DARK
 
 # Inicializando cliente OpenAI
-def enviar_consulta_a_deepseek(page, prompt, recipiente, modelo, api_key, url_base):
+async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta, modelo, api_key, url_base):
     try:
-        client = OpenAI(api_key=api_key, base_url=url_base)
-        response = client.chat.completions.create(
-            model = modelo,
-            messages = [
-                {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek."},
+        client = openai.OpenAI(api_key=api_key, base_url=url_base)
+
+        campo_respuesta.value = "Procesando tu solicitud..."
+        await campo_respuesta.update_async()
+
+        respuesta = client.chat.completions.create(
+            model=modelo,
+            messages=[
+                {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek. Eres un asistente y experto programador promotor del software libre."},
                 {"role": "user", "content": prompt},
             ],
             temperature=0,
             stream=True
         )
-        colectados_chunks = []
-        colectados_mensajes = []
-        recipiente = ""
 
-        for chunk in response:
-            colectados_chunks.append(chunk)
-            mensaje_chunk = chunk.choices[0].delta.content
-            colectados_mensajes.append(mensaje_chunk)
-            print(f"Mensaje: {mensaje_chunk}")
-            recipiente += mensaje_chunk
-            page.update()
+        # Procesar cada chunk de la respuesta
+        campo_respuesta.value = ""  # Limpiamos el mensaje de "Procesando..."
+        for chunk in respuesta:
+            if chunk.choices[0].delta.content:
+                chunk_texto = chunk.choices[0].delta.content
+                campo_respuesta.value += chunk_texto
+                print(f"Campo: {chunk_texto}")
+                await campo_respuesta.update_async()  # Se actualiza la interfaz en tiempo real
+                await asyncio.sleep(0)
 
-        return recipiente
+    except asyncio.TimeoutError:
+        # En caso de que el servidor no responda en el tiempo especificado
+        campo_respuesta.value = "Error: El servidor no respondió a tiempo. Intenta de nuevo."
+        await campo_respuesta.update_async()
+    except (APIError, APIConnectionError, OpenAIError) as e:
+        # Manejo de errores con la API
+        campo_respuesta.value = f"Error de conexión con la IA: {str(e)}"
+        await campo_respuesta.update_async()
     except Exception as e:
-        return f"Error: {str(e)}" 
-    # Cargar configuración
-config = cargar_configuracion()
+        # Manejo de cualquier otro error no esperado
+        campo_respuesta.value = f"Error inesperado: {str(e)}"
+        await campo_respuesta.update_async()
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     # Configuración del theme inicial
     page.window_width = 400
     page.window_height = 800
@@ -82,17 +99,14 @@ def main(page: ft.Page):
     )
 
     # Componentes de la interfáz
-
-    # Barra de Aplicación
     barra_app = ft.AppBar(
         title=ft.Text(APP_NAME, size=22, color="#1440AD", weight=ft.FontWeight.W_900),
-        #bgcolor="#1440AD",
         bgcolor=ft.Colors.BLUE,
         actions=[
             ft.IconButton(ft.Icons.SUNNY if not page.theme_mode == ft.ThemeMode.LIGHT else ft.icons.LIGHT_MODE,
                           on_click=lambda e: cambiar_theme(),
                           tooltip="Cambiar Tema"
-                          ), 
+                          ),
         ]
     )
     page.appbar = barra_app
@@ -109,7 +123,7 @@ def main(page: ft.Page):
             ]
         ),
     )
-    page.bottom_appbar=barra_app
+    page.bottom_appbar = barra_app
 
     input_prompt = ft.TextField(
         label="Escribe tu consulta",
@@ -120,27 +134,11 @@ def main(page: ft.Page):
         bgcolor=ft.colors.GREY_50,
         on_submit=lambda e: on_submit(e) if config["usar_enter"] else False
     )
-    output_response = """
----
-
-**"Cada línea de código que escribes es un paso hacia un futuro mejor. Con cada algoritmo, cada función y cada solución, estás construyendo un mundo más inteligente, más conectado y más humano. ¡Sigue programando, sigue innovando, sigue soñando!**
-
-**Este mensaje será reemplazado por las respuestas a tus consultas. ¡Adelante, explora, pregunta y descubre todo lo que la inteligencia artificial puede hacer por ti!"**
-
----
-    """
 
     # switch para enviar con enter
     switch_enter = ft.Switch(
         value=config["usar_enter"],
         on_change=lambda e: actualizar_configuracion("usar_enter", e.control.value)
-    )
-
-    # theme_switch
-    # switch modo oscuro
-    switch_theme = ft.Switch(
-        value=config["theme_mode"],
-        on_change=lambda e: cambiar_theme()
     )
 
     # Lista desplegable para seleccionar el modelo
@@ -154,13 +152,11 @@ def main(page: ft.Page):
     )
 
     # Campos de configuración
-    campo_api_key = ft.TextField(label="API Key", 
-                                 value=config["api_key"], 
-                                 password=True, 
+    campo_api_key = ft.TextField(label="API Key",
+                                 value=config["api_key"],
+                                 password=True,
                                  can_reveal_password=True)
     campo_url_base = ft.TextField(label="URL Base", value=config["url_base"])
-
-
 
     # Función Guardar Configuración Avanzada
     def guardar_configuracion_avanzada(e):
@@ -168,12 +164,12 @@ def main(page: ft.Page):
         config["url_base"] = campo_url_base.value
         guardar_configuracion(config)
         page.snack_bar = ft.SnackBar(ft.Text("¡Configuración Guardada!"))  # Crea el SnackBar
-        page.snack_bar.bgcolor=ft.colors.GREEN
+        page.snack_bar.bgcolor = ft.colors.GREEN
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()
+
     # Boton Guardar la Configuración Avanzada!
     btn_guardar_conf = ft.ElevatedButton("Guardar", on_click=guardar_configuracion_avanzada)
-
 
     # espacio de configuración del Campo de consulta o Prompt
     tab_prompt = ft.Column(
@@ -183,7 +179,6 @@ def main(page: ft.Page):
         ],
         spacing=10
     )
-
 
     # espacio configuración API
     tab_api = ft.Column(
@@ -219,15 +214,15 @@ def main(page: ft.Page):
         config[clave] = valor
         guardar_configuracion(config)
         if clave == "usar_enter":
-            input_prompt.multiline= not valor
+            input_prompt.multiline = not valor
             btn_enviar.visible = not valor
             page.update()
         else:
-            input_prompt.multiline=True
+            input_prompt.multiline = True
             btn_enviar.visible = True
             page.update()
 
-# Función de aplicación del theme
+    # Función de aplicación del theme
     def aplicar_theme(theme):
         page.bgcolor = theme["background_color"]
         page.update()
@@ -235,47 +230,40 @@ def main(page: ft.Page):
     def cambiar_theme():
         if config["theme_mode"] == "theme_oscuro":
             page.theme_mode = ft.ThemeMode.LIGHT
-            config["theme_mode"]="theme_claro"
-            #aplicar_theme(theme_claro)
+            config["theme_mode"] = "theme_claro"
         else:
             page.theme_mode = ft.ThemeMode.DARK
-            config["theme_mode"]="theme_oscuro"
-            #aplicar_theme(theme_oscuro)
+            config["theme_mode"] = "theme_oscuro"
 
         guardar_configuracion(config)
         page.update()
 
+    campo_respuesta = ft.Text("")
+
     # Construyendo componentes de la interfáz
-    def on_submit(e):
+    async def on_submit(e):
         prompt = input_prompt.value
         if prompt.strip():
             if not config["api_key"]:
-                output_response = "Error: API Key no configurada."
-                page.update()
+                campo_respuesta.value = "Error: API Key no configurada."
+                await campo_respuesta.update_async()
                 return
 
-            output_response = "Procesando..."
-            page.update()
+            try:
+                await asyncio.wait_for(
+                    enviar_consulta_a_deepseek(page, prompt, campo_respuesta, lista_modelos.value, config["api_key"], config["url_base"]),
+                    timeout=1000
+                )
+            except asyncio.TimeoutError:
+                campo_respuesta.value = "Error: El servidor no respondió a tiempo. Intenta de nuevo."
+                await campo_respuesta.update_async()
 
-            response = enviar_consulta_a_deepseek(page, prompt, output_response, lista_modelos.value, config["api_key"], config["url_base"])
-            # generar aquí variable que almacene el contenido del prompt antes de borrarlo,
-            # darle formato para diferenciarlo de la respuesta, y concatenarlo.
-            # nombre posible: cita_prompt
-            # uso: output_response.value = citaprompt + response
-
-            #output_response.value = response
-            #output_response.value = f"> {prompt}\n\n{response}"
-            output_response = ft.Markdown(f"> {prompt}\n\n{response}", selectable=True)
-            respuesta_area.controls.append(output_response)
-
-
-            input_prompt.value = "" # Recibida la respuesta limpiamos el campo de consulta
-            input_prompt.focus() # Limpiado el campo de consulta, procedemos a enfocar el campo (usabilidad)
-            page.update()
+            input_prompt.value = ""  # Recibida la respuesta limpiamos el campo de consulta
+            input_prompt.focus()  # Limpiado el campo de consulta, procedemos a enfocar el campo (usabilidad)
+            await input_prompt.update_async()
         else:
-            output_response = "Por favor, escribe una consulta."
-            page.update()
-
+            campo_respuesta.value = "Por favor, escribe una consulta."
+            await campo_respuesta.update_async()
 
     # Función cerrar la app
     def cerrar_click(e):
@@ -289,36 +277,32 @@ def main(page: ft.Page):
 
     # Resetear todos los campos
     def resetear_campos(e):
-        output_response = ""
+        campo_respuesta.value = ""
         input_prompt.focus()
         page.update()
 
     # Función para copiar el prompt al portapapeles
     def copiar_prompt(e):
-        #if input_prompt.value:
         page.set_clipboard(input_prompt.value)
         page.snack_bar = ft.SnackBar(ft.Text("Prompt copiado!"))  # Crea el SnackBar
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()  # Actualiza la página para mostrar el SnackBar
 
-
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
-        #if output_response.value:
-        page.set_clipboard(output_response)
+        page.set_clipboard(campo_respuesta.value)
         page.snack_bar = ft.SnackBar(ft.Text("Respuesta copiada!"))  # Crea el SnackBar
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()  # Actualiza la página para mostrar el SnackBar
 
     # --------- Botones --------------------
     btn_enviar = ft.ElevatedButton("Enviar", icon=ft.icons.SEND, visible=not config["usar_enter"])
-    btn_copiar_prompt = ft.ElevatedButton("Copiar",icon=ft.icons.COPY, on_click=copiar_prompt)
-    btn_reset_prompt = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE,)
-    btn_copiar_resp = ft.ElevatedButton("Copiar",icon=ft.icons.COPY, on_click=copiar_respuesta)
+    btn_copiar_prompt = ft.ElevatedButton("Prompt", icon=ft.icons.COPY, on_click=copiar_prompt)
+    btn_reset_prompt = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE)
+    btn_copiar_resp = ft.ElevatedButton("Respuesta", icon=ft.icons.COPY, on_click=copiar_respuesta)
     btn_resetear_todo = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE)
-    btn_cerrar = ft.ElevatedButton("Salir", icon=ft.icons.CLOSE)
+    btn_cerrar = ft.ElevatedButton(" ", icon=ft.icons.CLOSE)
     # ---------- Fin Botones ----------------
-
 
     # Asignación de Eventos a los botones
     btn_enviar.on_click = on_submit
@@ -327,45 +311,35 @@ def main(page: ft.Page):
     btn_cerrar.on_click = cerrar_click
 
     campos_prompt = ft.Row(
-        controls = [
+        controls=[
             input_prompt,
             btn_enviar
         ],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
         expand=True
-        )
+    )
 
     fila_prompt = ft.Container(
-        content =  campos_prompt
+        content=campos_prompt
     )
 
-    fila_prompt_botones = ft.Row([btn_copiar_prompt, btn_reset_prompt,],spacing=10)
-
-    panel_respuesta = ft.ListView(
-        controls = [
-            output_response
-        ],
-        spacing=10,
-        expand=True,
-        auto_scroll=True
-    )
-
-    # botones del panel de respuesta
-    fila_panel_respuesta = ft.Row([btn_copiar_resp,btn_resetear_todo])
+    fila_prompt_botones = ft.Row([btn_copiar_prompt, btn_copiar_resp, btn_reset_prompt, btn_cerrar], spacing=10)
 
     respuesta_area = ft.Column(
-        controls=[],
-        scroll=ft.ScrollMode.AUTO, # Habilita desplazamiento si es largo el contenido
-        expand=True, # Ocupa el espacio vertical disponible
+        controls=[
+            campo_respuesta,
+        ],
+        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
+        expand=True,  # Ocupa el espacio vertical disponible
         alignment=ft.MainAxisAlignment.END,
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
     container_panel_respuesta = ft.Container(
-        content = respuesta_area,
-        padding = 20,
+        content=respuesta_area,
+        padding=20,
         border=ft.border.all(1, ft.colors.GREY_300),
-        border_radius = 10,
+        border_radius=10,
         expand=True,
     )
 
@@ -373,14 +347,14 @@ def main(page: ft.Page):
     tab_chat = ft.Column(
         [
             container_panel_respuesta,
-            fila_panel_respuesta,
+            #fila_panel_respuesta,
         ],
         expand=True,
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
 
     container_panel_configuracion = ft.Container(
-        content = ft.Tabs(
+        content=ft.Tabs(
             selected_index=0,
             tabs=[
                 ft.Tab(text="Chat", content=tab_chat),
@@ -400,21 +374,20 @@ def main(page: ft.Page):
             fila_prompt,
             fila_prompt_botones
         ],
-        alignment = ft.MainAxisAlignment.END
+        alignment=ft.MainAxisAlignment.END
     )
 
     # Agregamos componentes a la página
     page.add(
-        #container_panel_configuracion,
         ft.Column(
-            controls = [
+            controls=[
                 container_panel_configuracion,
                 panel_prompt
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             expand=True,
         ),
-        #barra_pie  
     )
+
 # Ejecución del Programa
 ft.app(target=main)
