@@ -42,6 +42,10 @@ def cargar_configuracion():
         "usar_enter": False,
         "modelo": "deepseek-chat",
         "theme_mode": "theme_claro",
+        "code_theme": "claro",
+        "code_theme_claro": "gruvbox-light",
+        "code_theme_oscuro": "gruvbox-dark",
+        "extension_set": "gitHubWeb",
         "api_key": "",
         "url_base": "",
         "stream": True
@@ -65,8 +69,18 @@ AUTOR_NICK = "@jonasroot"
 AUTOR_CONTACT = "Telegram: @jonasreyes"
 AUTOR_BLOG = "https://jonasroot.t.me"
 LICENCIA = "GNU/GPL V3"
-CODE_THEME_CLARO = ft.MarkdownCodeTheme.GRUVBOX_LIGHT
-CODE_THEME_OSCURO = ft.MarkdownCodeTheme.GRUVBOX_DARK
+EXTENSION_SET = config["extension_set"]
+CODE_THEME_CLARO = config["code_theme_claro"]
+CODE_THEME_OSCURO = config["code_theme_oscuro"]
+CODE_THEME = ""
+
+# Función Actualizar Markdown
+def actualizar_markdown(campo, code_theme="atom-one-dark", extension_set="gitHubWeb", selectable=True, auto_follow_links=True):
+    campo.extension_set = extension_set
+    campo.code_theme = code_theme
+    campo.selectable = selectable
+    campo.auto_follow_links = auto_follow_links
+    campo.update()
 
 # Inicializando cliente OpenAI
 async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta, modelo, api_key, url_base):
@@ -121,9 +135,14 @@ async def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
 
     page.title = f"{APP_NAME} {APP_LEMA}"
+
+    # en futura actualización facilitaré la personalización completa del theme.
     page.theme = ft.Theme(
         color_scheme_seed=ft.Colors.BLUE,
     )
+
+    # referencia para scroll de respuesta
+    respuesta_area_ref = ft.Ref[ft.Column]()
 
     # Componentes de la interfáz
     barra_app = ft.AppBar(
@@ -152,6 +171,7 @@ async def main(page: ft.Page):
     )
     page.bottom_appbar = barra_app
 
+    #: str: Campo de ingreso de consulta o prompt
     input_prompt = ft.TextField(
         label="Escribe tu consulta",
         autofocus=True,
@@ -180,10 +200,12 @@ async def main(page: ft.Page):
     )
 
     # Campos de configuración
+    # str: Campo para depositar el string o token api key de deepseek
     campo_api_key = ft.TextField(label="API Key",
                                  value=config["api_key"],
                                  password=True,
                                  can_reveal_password=True)
+    # str: Campo en el que debe colocarse la dirección del servidor con el model IA a acceder por API
     campo_url_base = ft.TextField(label="URL Base", value=config["url_base"])
 
     # Función Guardar Configuración Avanzada
@@ -237,16 +259,11 @@ async def main(page: ft.Page):
         spacing=10
     )
 
+    acercade = ft.Markdown(acerca.de)
     # panel configuración modelos
     tab_acerca = ft.Column(
         [
-            ft.Markdown(
-                acerca.de,
-                selectable=False,
-                extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
-                auto_follow_links=True,
-
-            ),
+            acercade,
         ],
         spacing=10,
         scroll=ft.ScrollMode.AUTO
@@ -271,17 +288,24 @@ async def main(page: ft.Page):
         page.update()
 
     def cambiar_theme():
+        global CODE_THEME, CODE_THEME_CLARO, CODE_THEME_OSCURO
+        global EXTENSION_SET
         if config["theme_mode"] == "theme_oscuro":
             page.theme_mode = ft.ThemeMode.LIGHT
             config["theme_mode"] = "theme_claro"
+            CODE_THEME = CODE_THEME_CLARO
         else:
             page.theme_mode = ft.ThemeMode.DARK
             config["theme_mode"] = "theme_oscuro"
+            CODE_THEME = CODE_THEME_OSCURO
 
+        actualizar_markdown(campo_respuesta,CODE_THEME)
+        actualizar_markdown(acercade,CODE_THEME, selectable=True)
         guardar_configuracion(config)
         page.update()
 
-    campo_respuesta = ft.Markdown("", selectable=True, extension_set=ft.MarkdownExtensionSet.GITHUB_WEB, code_theme=ft.MarkdownCodeTheme.GITHUB)
+    # str: Campo de salida de la respuesta de la IA, el estilo y formato se dará desde la fución actualizar_markdown()
+    campo_respuesta = ft.Markdown("")
 
     # Construyendo componentes de la interfáz
     async def on_submit(e):
@@ -292,11 +316,20 @@ async def main(page: ft.Page):
                 await campo_respuesta.update_async()
                 return
 
+            respuesta_area.controls.append(ft.Markdown(f"> **Tú:**\n> {prompt}"))
             try:
                 await asyncio.wait_for(
-                    enviar_consulta_a_deepseek(page, prompt, campo_respuesta, lista_modelos.value, config["api_key"], config["url_base"]),
+                    enviar_consulta_a_deepseek(
+                        page,
+                        prompt,
+                        campo_respuesta,
+                        lista_modelos.value,
+                        config["api_key"],
+                        config["url_base"]
+                    ),
                     timeout=1000
                 )
+                respuesta_area_ref.current.scroll_to(offset=-1, duration=1000)
             except asyncio.TimeoutError:
                 campo_respuesta.value = "Error: El servidor no respondió a tiempo. Intenta de nuevo."
                 await campo_respuesta.update_async()
@@ -428,13 +461,14 @@ async def main(page: ft.Page):
     fila_prompt_botones = ft.Row([btn_copiar_prompt,btn_reset_prompt,btn_copiar_resp,btn_resetear_todo,btn_cerrar], spacing=10, scroll=True)
 
     respuesta_area = ft.Column(
+        ref=respuesta_area_ref,
         controls=[
             campo_respuesta,
         ],
         scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
         expand=True,  # Ocupa el espacio vertical disponible
         alignment=ft.MainAxisAlignment.END,
-        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
     )
 
     container_panel_respuesta = ft.Container(
