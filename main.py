@@ -85,6 +85,9 @@ async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta, modelo, api_
             temperature=0,
             stream=True
         )
+        # colectores
+        colectados_chunks = []
+        colectados_mensajes = []
 
         # Procesar cada chunk de la respuesta
         campo_respuesta.value = ""  # Limpiamos el mensaje de "Procesando..."
@@ -278,7 +281,7 @@ async def main(page: ft.Page):
         guardar_configuracion(config)
         page.update()
 
-    campo_respuesta = ft.Text("")
+    campo_respuesta = ft.Markdown("", selectable=True, extension_set=ft.MarkdownExtensionSet.GITHUB_WEB, code_theme=ft.MarkdownCodeTheme.GITHUB)
 
     # Construyendo componentes de la interfáz
     async def on_submit(e):
