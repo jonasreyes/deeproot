@@ -1,3 +1,26 @@
+"""
+Nombre de la aplicación: DEEPROOT
+Versión: 0.0.1
+Autor: Jonás Antonio Reyes Casanova (jonasroot)
+Fecha de creación: 28-01-2025
+Última actualización: 09-02-2025
+
+Descripción:
+Esta aplicación es un cliente de escritorio y móvil para facilitar el acceso y disfrute del Servicio API de DeepSeek. Se requiere de un token de DeepSeek Platform para poder funcionar. Es un desarrollo independiente, inspirado en los valores del Software Libre en Venezuela. Es resultado de los incentivos éticos de la Universidad Bolivariana de Venezuela y la Comunidad de Canaima GNU/Linux.
+
+Licencia:
+Este software se distribuye bajo la licencia GNU GPL v3.0.
+Puedes encontrar una copia de la licencia en https://www.gnu.org/licenses/gpl-3.0.html#license-text
+Este código es libre y debe permanecer así. Si realizas modificaciones o derivados, debes mencionar al autor original (yo) y mantener esta misma licencia.
+
+Contacto:
+- Canal de Telegram: t.me/jonasroot (comenta una publicación)
+- Repositorio: https://github.com/jonasreyes/deeproot.git
+
+"La verdadera inteligencia no solo resuelve problemas, sino que cultiva la vida..."
+#PatriaYSoftwareLibre
+"""
+
 import flet as ft
 import openai
 import asyncio
@@ -5,6 +28,7 @@ from openai import OpenAIError, APIConnectionError, APIError
 import json
 import os
 import modules.themes as themes
+import acerca
 
 # ARCHIVO DE CONFIGURACIÓN
 CONFIG_FILE = "deeproot.json"
@@ -209,6 +233,21 @@ async def main(page: ft.Page):
         spacing=10
     )
 
+    # panel configuración modelos
+    tab_acerca = ft.Column(
+        [
+            ft.Markdown(
+                acerca.de,
+                selectable=False,
+                extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+                auto_follow_links=True,
+
+            ),
+        ],
+        spacing=10,
+        scroll=ft.ScrollMode.AUTO
+    )
+
     # Función para actualizar configuraciones
     def actualizar_configuracion(clave, valor):
         config[clave] = valor
@@ -273,12 +312,17 @@ async def main(page: ft.Page):
     def reset_prompt(e):
         input_prompt.value = ""
         input_prompt.focus()
+        page.snack_bar = ft.SnackBar(ft.Text("Prompt borrado!"))  # Crea el SnackBar
+        page.snack_bar.open = True  # Abre el SnackBar
         page.update()
 
     # Resetear todos los campos
     def resetear_campos(e):
         campo_respuesta.value = ""
+        input_prompt.value = ""
         input_prompt.focus()
+        page.snack_bar = ft.SnackBar(ft.Text("Consultas reiniciadas"), bgcolor=ft.Colors.GREEN)  # Crea el SnackBar
+        page.snack_bar.open = True  # Abre el SnackBar
         page.update()
 
     # Función para copiar el prompt al portapapeles
@@ -291,24 +335,78 @@ async def main(page: ft.Page):
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
         page.set_clipboard(campo_respuesta.value)
-        page.snack_bar = ft.SnackBar(ft.Text("Respuesta copiada!"))  # Crea el SnackBar
+        page.snack_bar = ft.SnackBar(ft.Text("¡Respuesta copiada y en formato Markdown!"))  # Crea el SnackBar
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()  # Actualiza la página para mostrar el SnackBar
 
+
+    # Gestion de dialogos de confirmación
+    def on_resetear_campos(e):
+        def cerrar_dialogo(e):
+            dlg.open=False
+            page.update()
+
+        def confirmar_resetear_campos(e):
+            resetear_campos(e)
+            cerrar_dialogo(e)
+
+        # Dialogo Alerta
+        dlg=ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Por favor confirme"),
+            content=ft.Text("¿Realmente desea iniciar otra conversación? No podrá recuperar las conversaciones anteriores."),
+            actions=[
+                ft.TextButton("Sí", on_click=confirmar_resetear_campos),
+                ft.TextButton("No", on_click=cerrar_dialogo),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
+        page.dialog=dlg
+        dlg.open = True
+        page.update()
+
+    # Gestion de dialogos de cierre de la app
+    def on_cerrar_click(e):
+        def cerrar_dialogo(e):
+            dlg.open=False
+            page.update()
+
+        def confirmar_cerrar_click(e):
+            cerrar_click(e)
+            cerrar_dialogo(e)
+
+        # Dialogo Alerta
+        dlg=ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Por favor confirme"),
+            content=ft.Text("¿Desea cerrar DeepRoot? Al salír se borrarán las conversacioes, asegurese de haber respaldado las de su interés."),
+            actions=[
+                ft.TextButton("Sí", on_click=confirmar_cerrar_click),
+                ft.TextButton("No", on_click=cerrar_dialogo),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
+        page.dialog=dlg
+        dlg.open = True
+        page.update()
+
+
     # --------- Botones --------------------
     btn_enviar = ft.ElevatedButton("Enviar", icon=ft.icons.SEND, visible=not config["usar_enter"])
-    btn_copiar_prompt = ft.ElevatedButton("Prompt", icon=ft.icons.COPY, on_click=copiar_prompt)
-    btn_reset_prompt = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE)
-    btn_copiar_resp = ft.ElevatedButton("Respuesta", icon=ft.icons.COPY, on_click=copiar_respuesta)
-    btn_resetear_todo = ft.ElevatedButton("Limpiar", icon=ft.icons.RESTORE)
-    btn_cerrar = ft.ElevatedButton(" ", icon=ft.icons.CLOSE)
+    btn_copiar_prompt = ft.ElevatedButton("Copiar Prompt", icon=ft.icons.FILE_COPY, on_click=copiar_prompt)
+    btn_reset_prompt = ft.ElevatedButton("Borrar Prompt", icon=ft.icons.DELETE)
+    btn_copiar_resp = ft.ElevatedButton("Copiar Respuesta", icon=ft.icons.OFFLINE_SHARE_ROUNDED, on_click=copiar_respuesta)
+    btn_resetear_todo = ft.ElevatedButton("Nuevo Chat", icon=ft.icons.CHAT)
+    btn_cerrar = ft.ElevatedButton("Salir", icon=ft.icons.EXIT_TO_APP)
     # ---------- Fin Botones ----------------
 
     # Asignación de Eventos a los botones
     btn_enviar.on_click = on_submit
     btn_reset_prompt.on_click = reset_prompt
-    btn_resetear_todo.on_click = resetear_campos
-    btn_cerrar.on_click = cerrar_click
+    btn_resetear_todo.on_click = on_resetear_campos
+    btn_cerrar.on_click = on_cerrar_click
 
     campos_prompt = ft.Row(
         controls=[
@@ -323,7 +421,7 @@ async def main(page: ft.Page):
         content=campos_prompt
     )
 
-    fila_prompt_botones = ft.Row([btn_copiar_prompt, btn_copiar_resp, btn_reset_prompt, btn_cerrar], spacing=10)
+    fila_prompt_botones = ft.Row([btn_copiar_prompt,btn_reset_prompt,btn_copiar_resp,btn_resetear_todo,btn_cerrar], spacing=10, scroll=True)
 
     respuesta_area = ft.Column(
         controls=[
@@ -362,6 +460,7 @@ async def main(page: ft.Page):
                 ft.Tab(text="API Key", content=tab_api),
                 ft.Tab(text="URL Base", content=tab_url),
                 ft.Tab(text="Modelo", content=tab_modelo),
+                ft.Tab(text="Acerca de", content=tab_acerca),
             ],
         ),
         expand=True,
@@ -376,6 +475,7 @@ async def main(page: ft.Page):
         ],
         alignment=ft.MainAxisAlignment.END
     )
+
 
     # Agregamos componentes a la página
     page.add(
