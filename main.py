@@ -119,7 +119,7 @@ async def main(page: ft.Page):
 
     page.title = f"{APP_NAME} {APP_LEMA}"
     page.theme = ft.Theme(
-        color_scheme_seed=ft.Colors.BLUE_400,
+        color_scheme_seed=ft.Colors.BLUE,
     )
 
     # Componentes de la interfáz
@@ -155,14 +155,15 @@ async def main(page: ft.Page):
         expand=True,
         min_lines=2,
         max_lines=4,
-        bgcolor=ft.colors.GREY_50,
+        #bgcolor=ft.colors.BLUE_400,
         on_submit=lambda e: on_submit(e) if config["usar_enter"] else False
     )
 
     # switch para enviar con enter
     switch_enter = ft.Switch(
         value=config["usar_enter"],
-        on_change=lambda e: actualizar_configuracion("usar_enter", e.control.value)
+        on_change=lambda e: actualizar_configuracion("usar_enter", e.control.value),
+        disabled=True
     )
 
     # Lista desplegable para seleccionar el modelo
