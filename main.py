@@ -194,6 +194,7 @@ async def main(page: ft.Page):
         value=config["modelo"],
         options=[
             ft.dropdown.Option("deepseek-chat"),
+            ft.dropdown.Option("deepseek-coder"),
             ft.dropdown.Option("deepseek-reasoner"),
         ],
         on_change=lambda e: actualizar_configuracion("modelo", e.control.value)
@@ -222,10 +223,16 @@ async def main(page: ft.Page):
     btn_guardar_conf = ft.ElevatedButton("Guardar", on_click=guardar_configuracion_avanzada)
 
     # espacio de configuración del Campo de consulta o Prompt
-    tab_prompt = ft.Column(
+    tab_interfaz = ft.Column(
         [
             ft.Text("Enviar Prompt con tecla Enter", size=16, weight=ft.FontWeight.BOLD),
-            switch_enter
+            switch_enter,
+            ft.Text("Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("Code Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("Extensiones Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
+
+
+
         ],
         spacing=10
     )
@@ -235,29 +242,15 @@ async def main(page: ft.Page):
         [
             ft.Text("Token de Acceso al Servicio API", size=16, weight=ft.FontWeight.BOLD),
             campo_api_key,
-            btn_guardar_conf
-        ],
-        spacing=10
-    )
-
-    tab_url = ft.Column(
-        [
-            ft.Text("Dirección del Servicio API", size=16, weight=ft.FontWeight.BOLD),
             campo_url_base,
-            btn_guardar_conf
-        ],
-        spacing=10
-    )
-
-    # panel configuración modelos
-    tab_modelo = ft.Column(
-        [
             ft.Text("Seleccione un Modelo:", size=16, weight=ft.FontWeight.BOLD),
             lista_modelos,
             btn_guardar_conf
         ],
-        spacing=10
+        spacing=10,
+        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
     )
+
 
     acercade = ft.Markdown(acerca.de)
     # panel configuración modelos
@@ -311,23 +304,17 @@ async def main(page: ft.Page):
     async def on_submit(e):
         prompt = input_prompt.value
         if prompt.strip():
+            input_prompt.value = ""
+            await input_prompt.update_async()
             if not config["api_key"]:
                 campo_respuesta.value = "Error: API Key no configurada."
                 await campo_respuesta.update_async()
                 return
 
-            respuesta_area.controls.append(ft.Markdown(f"> **Tú:**\n> {prompt}"))
             try:
                 await asyncio.wait_for(
-                    enviar_consulta_a_deepseek(
-                        page,
-                        prompt,
-                        campo_respuesta,
-                        lista_modelos.value,
-                        config["api_key"],
-                        config["url_base"]
-                    ),
-                    timeout=1000
+                    enviar_consulta_a_deepseek(page, prompt, campo_respuesta, lista_modelos.value, config["api_key"], config["url_base"]),
+                    timeout=10000
                 )
                 respuesta_area_ref.current.scroll_to(offset=-1, duration=1000)
             except asyncio.TimeoutError:
@@ -432,8 +419,8 @@ async def main(page: ft.Page):
 
     # --------- Botones --------------------
     btn_enviar = ft.ElevatedButton("Enviar", icon=ft.icons.SEND, visible=not config["usar_enter"])
-    btn_copiar_prompt = ft.ElevatedButton("Copiar Prompt", icon=ft.icons.FILE_COPY, on_click=copiar_prompt)
-    btn_reset_prompt = ft.ElevatedButton("Borrar Prompt", icon=ft.icons.DELETE)
+    btn_copiar_prompt = ft.ElevatedButton("Prompt", icon=ft.icons.FILE_COPY, on_click=copiar_prompt)
+    btn_reset_prompt = ft.ElevatedButton("Prompt", icon=ft.icons.DELETE)
     btn_copiar_resp = ft.ElevatedButton("Copiar Respuesta", icon=ft.icons.OFFLINE_SHARE_ROUNDED, on_click=copiar_respuesta)
     btn_resetear_todo = ft.ElevatedButton("Nuevo Chat", icon=ft.icons.CHAT)
     btn_cerrar = ft.ElevatedButton("Salir", icon=ft.icons.EXIT_TO_APP)
@@ -458,7 +445,7 @@ async def main(page: ft.Page):
         content=campos_prompt
     )
 
-    fila_prompt_botones = ft.Row([btn_copiar_prompt,btn_reset_prompt,btn_copiar_resp,btn_resetear_todo,btn_cerrar], spacing=10, scroll=True)
+    fila_prompt_botones = ft.Row([btn_copiar_prompt,btn_reset_prompt,btn_copiar_resp,btn_resetear_todo,btn_cerrar], wrap=True, spacing=10, scroll=True)
 
     respuesta_area = ft.Column(
         ref=respuesta_area_ref,
@@ -494,10 +481,8 @@ async def main(page: ft.Page):
             selected_index=0,
             tabs=[
                 ft.Tab(text="Chat", content=tab_chat),
-                ft.Tab(text="Prompt", content=tab_prompt),
-                ft.Tab(text="API Key", content=tab_api),
-                ft.Tab(text="URL Base", content=tab_url),
-                ft.Tab(text="Modelo", content=tab_modelo),
+                ft.Tab(text="Interfáz", content=tab_interfaz),
+                ft.Tab(text="Configuración API", content=tab_api),
                 ft.Tab(text="Acerca de", content=tab_acerca),
             ],
         ),
