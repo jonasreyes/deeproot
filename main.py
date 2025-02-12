@@ -21,14 +21,21 @@ Contacto:
 #PatriaYSoftwareLibre
 """
 
-import flet as ft
 import openai
-import asyncio
 from openai import OpenAIError, APIConnectionError, APIError
+import flet as ft
+import asyncio
 import json
 import os
 import modules.themes as themes
 import acerca
+import locale
+from datetime import datetime
+
+# contexto de tiempo
+locale.setlocale(locale.LC_TIME, 'es_VE.UTF-8')
+hoy = datetime.now()
+fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
 
 # ARCHIVO DE CONFIGURACIÓN
 CONFIG_FILE = "deeproot.json"
@@ -48,7 +55,8 @@ def cargar_configuracion():
         "extension_set": "gitHubWeb",
         "api_key": "",
         "url_base": "",
-        "stream": True
+        "stream": True,
+        "max_tokens": 8192 # por defecto usa 4096, otros números: 2048, 1024, 512
     }
 
 # Guardar configuración
@@ -75,81 +83,34 @@ CODE_THEME_OSCURO = config["code_theme_oscuro"]
 CODE_THEME = ""
 
 # Función Actualizar Markdown
-def actualizar_markdown(campo, code_theme="atom-one-dark", extension_set="gitHubWeb", selectable=True, auto_follow_links=True):
+def actualizar_markdown(campo, code_theme="gruvbox-light", extension_set="gitHubWeb", selectable=True, auto_follow_links=True):
     campo.extension_set = extension_set
     campo.code_theme = code_theme
     campo.selectable = selectable
     campo.auto_follow_links = auto_follow_links
     campo.update()
 
-# Inicializando cliente OpenAI
-async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta, modelo, api_key, url_base):
-    try:
-        client = openai.OpenAI(api_key=api_key, base_url=url_base)
-
-        campo_respuesta.value = "Procesando tu solicitud..."
-        await campo_respuesta.update_async()
-
-        respuesta = client.chat.completions.create(
-            model=modelo,
-            messages=[
-                {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek. Eres un asistente y experto programador promotor del software libre."},
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0,
-            stream=True
-        )
-        # colectores
-        colectados_chunks = []
-        colectados_mensajes = []
-
-        # Procesar cada chunk de la respuesta
-        campo_respuesta.value = ""  # Limpiamos el mensaje de "Procesando..."
-        for chunk in respuesta:
-            if chunk.choices[0].delta.content:
-                chunk_texto = chunk.choices[0].delta.content
-                campo_respuesta.value += chunk_texto
-                print(f"Campo: {chunk_texto}")
-                await campo_respuesta.update_async()  # Se actualiza la interfaz en tiempo real
-                await asyncio.sleep(0)
-
-    except asyncio.TimeoutError:
-        # En caso de que el servidor no responda en el tiempo especificado
-        campo_respuesta.value = "Error: El servidor no respondió a tiempo. Intenta de nuevo."
-        await campo_respuesta.update_async()
-    except (APIError, APIConnectionError, OpenAIError) as e:
-        # Manejo de errores con la API
-        campo_respuesta.value = f"Error de conexión con la IA: {str(e)}"
-        await campo_respuesta.update_async()
-    except Exception as e:
-        # Manejo de cualquier otro error no esperado
-        campo_respuesta.value = f"Error inesperado: {str(e)}"
-        await campo_respuesta.update_async()
 
 async def main(page: ft.Page):
     # Configuración del theme inicial
-    page.window_width = 400
-    page.window_height = 800
+    page.title = f"{APP_NAME} {APP_LEMA}"
+    page.window.width = 400
+    page.window.height = 800
     page.padding = 20
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
-
-    page.title = f"{APP_NAME} {APP_LEMA}"
 
     # en futura actualización facilitaré la personalización completa del theme.
     page.theme = ft.Theme(
         color_scheme_seed=ft.Colors.BLUE,
     )
 
-    # referencia para scroll de respuesta
-    respuesta_area_ref = ft.Ref[ft.Column]()
-
     # Componentes de la interfáz
     barra_app = ft.AppBar(
         title=ft.Text(APP_NAME, size=22, color="#1440AD", weight=ft.FontWeight.W_900),
         bgcolor=ft.Colors.BLUE,
         actions=[
-            ft.IconButton(ft.Icons.SUNNY if not page.theme_mode == ft.ThemeMode.LIGHT else ft.icons.LIGHT_MODE,
+            ft.IconButton(ft.Icons.SUNNY if not page.theme_mode == ft.ThemeMode.LIGHT else ft.Icons.LIGHT_MODE,
                           on_click=lambda e: cambiar_theme(),
                           tooltip="Cambiar Tema"
                           ),
@@ -170,6 +131,134 @@ async def main(page: ft.Page):
         ),
     )
     page.bottom_appbar = barra_app
+
+    # Respuestas - EXPERIMENTAL
+    # Respuesta que devuelve la IA
+    respuesta_prompt_md = ft.Text(
+        "Bienvenido a DeepRoot Cliente API de DeepSeek AI", 
+        weight=ft.FontWeight.W_600, 
+        size=20, color="blue900", 
+        text_align=ft.TextAlign.CENTER, 
+        selectable=True
+    )
+
+    contenedor_respuesta_prompt_md = ft.Container(
+        content=respuesta_prompt_md,
+        bgcolor=ft.Colors.BLUE_100,
+        border_radius=10,
+        padding=10,
+        expand=True,
+    )
+    
+    # Prompt del usuario que será devuelto a la interfáz
+    respuesta_ia_text = ft.Markdown(
+        f""
+    )
+
+    # referencia para scroll de respuesta
+    respuesta_area_ref = ft.Ref[ft.Column]()
+
+    # str: Campo de salida de la respuesta de la IA, el estilo y formato se dará desde la fución actualizar_markdown()
+    campo_respuesta = ft.ListView(
+        controls=[
+            contenedor_respuesta_prompt_md,
+            respuesta_ia_text
+        ],
+        expand=True,
+        spacing=10,
+    )
+
+    #campo_respuesta.controls.clear()
+
+    # Inicializando cliente OpenAI
+    async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta,contenedor_respuesta_prompt_md, respuesta_ai_text, modelo, api_key, url_base):
+        try:
+            client = openai.OpenAI(api_key=api_key, base_url=url_base)
+
+            # Limpiamos el campo de respuesta
+            campo_respuesta.controls.clear()
+            campo_respuesta.controls.append(ft.Text("Procesando tu solicitud..."))
+            await campo_respuesta.update_async()
+
+            respuesta = client.chat.completions.create(
+                model=modelo,
+                messages=[
+                    {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek. Eres un asistente y experto programador promotor del software libre."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0,
+                stream=True,
+                max_tokens=config["max_tokens"]
+            )
+
+            # limpiamos campo de respuesta antes de agregar nueva información
+            campo_respuesta.controls.clear()
+            respuesta_prompt_md = ft.Text(
+                f"\"{prompt}\"\n{fecha_formateada}", 
+                weight=ft.FontWeight.W_400, 
+                size=16, color="blue900", 
+                text_align=ft.TextAlign.CENTER, 
+                selectable=True
+            )
+
+            # limpiando los datos.
+            contenedor_respuesta_prompt_md.content=respuesta_prompt_md 
+            campo_respuesta.controls.append(contenedor_respuesta_prompt_md)
+            campo_respuesta.controls.append(respuesta_ia_text)
+            await campo_respuesta.update_async()
+
+            # Procesar cada chunk de la respuesta
+            for chunk in respuesta:
+                if chunk.choices[0].delta.content:
+                    chunk_texto = chunk.choices[0].delta.content
+                    respuesta_ai_text.value += chunk_texto
+                    await campo_respuesta.update_async()
+                    await asyncio.sleep(0)
+                    print(f"Campo: {chunk_texto} -> respuesta_ai_text: {respuesta_ia_text}\nRespuestaPromptMD:{respuesta_prompt_md}")
+
+        except asyncio.TimeoutError:
+            # En caso de que el servidor no responda en el tiempo especificado
+            campo_respuesta.controls.append(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."))
+            await campo_respuesta.update_async()
+        except (APIError, APIConnectionError, OpenAIError) as e:
+            # Manejo de errores con la API
+            campo_respuesta.controls.append(ft.Text(f"Error de conexión con la IA: {str(e)}"))
+            await campo_respuesta.update_async()
+        except Exception as e:
+            # Manejo de cualquier otro error no esperado
+            campo_respuesta.controls.append(ft.Text(f"Error inesperado: {str(e)}"))
+            await campo_respuesta.update_async()
+
+
+
+    # Construyendo componentes de la interfáz
+    async def on_submit(e):
+        prompt = input_prompt.value
+        if prompt.strip():
+            input_prompt.value = ""
+            await input_prompt.update_async()
+            if not config["api_key"]:
+                campo_respuesta.controls.append(ft.Text("Error: API Key no configurada."))
+                await campo_respuesta.update_async()
+                return
+
+            try:
+                await asyncio.wait_for(
+                    enviar_consulta_a_deepseek(page, prompt, campo_respuesta,contenedor_respuesta_prompt_md,respuesta_ia_text ,lista_modelos.value, config["api_key"], config["url_base"]),
+                    timeout=10000
+                )
+                respuesta_area_ref.current.scroll_to(offset=-1, duration=1000)
+            except asyncio.TimeoutError:
+                await campo_respuesta.controls.append(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."))
+                campo_respuesta.update_async()
+
+            input_prompt.value = ""  # Recibida la respuesta limpiamos el campo de consulta
+            input_prompt.focus()  # Limpiado el campo de consulta, procedemos a enfocar el campo (usabilidad)
+            await input_prompt.update_async()
+        else:
+            campo_respuesta.controls.append(ft.Text("Por favor, escribe una consulta."))
+            await campo_respuesta.update_async()
+
 
     #: str: Campo de ingreso de consulta o prompt
     input_prompt = ft.TextField(
@@ -215,7 +304,7 @@ async def main(page: ft.Page):
         config["url_base"] = campo_url_base.value
         guardar_configuracion(config)
         page.snack_bar = ft.SnackBar(ft.Text("¡Configuración Guardada!"))  # Crea el SnackBar
-        page.snack_bar.bgcolor = ft.colors.GREEN
+        page.snack_bar.bgcolor = ft.Colors.GREEN
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()
 
@@ -252,7 +341,11 @@ async def main(page: ft.Page):
     )
 
 
-    acercade = ft.Markdown(acerca.de)
+    acercade = ft.Markdown(
+        acerca.de,
+        extension_set="gitHubWeb",
+        code_theme="gruvbox-light"
+    )
     # panel configuración modelos
     tab_acerca = ft.Column(
         [
@@ -292,41 +385,11 @@ async def main(page: ft.Page):
             config["theme_mode"] = "theme_oscuro"
             CODE_THEME = CODE_THEME_OSCURO
 
-        actualizar_markdown(campo_respuesta,CODE_THEME)
+        actualizar_markdown(respuesta_ia_text,CODE_THEME)
         actualizar_markdown(acercade,CODE_THEME, selectable=True)
         guardar_configuracion(config)
         page.update()
 
-    # str: Campo de salida de la respuesta de la IA, el estilo y formato se dará desde la fución actualizar_markdown()
-    campo_respuesta = ft.Markdown("")
-
-    # Construyendo componentes de la interfáz
-    async def on_submit(e):
-        prompt = input_prompt.value
-        if prompt.strip():
-            input_prompt.value = ""
-            await input_prompt.update_async()
-            if not config["api_key"]:
-                campo_respuesta.value = "Error: API Key no configurada."
-                await campo_respuesta.update_async()
-                return
-
-            try:
-                await asyncio.wait_for(
-                    enviar_consulta_a_deepseek(page, prompt, campo_respuesta, lista_modelos.value, config["api_key"], config["url_base"]),
-                    timeout=10000
-                )
-                respuesta_area_ref.current.scroll_to(offset=-1, duration=1000)
-            except asyncio.TimeoutError:
-                campo_respuesta.value = "Error: El servidor no respondió a tiempo. Intenta de nuevo."
-                await campo_respuesta.update_async()
-
-            input_prompt.value = ""  # Recibida la respuesta limpiamos el campo de consulta
-            input_prompt.focus()  # Limpiado el campo de consulta, procedemos a enfocar el campo (usabilidad)
-            await input_prompt.update_async()
-        else:
-            campo_respuesta.value = "Por favor, escribe una consulta."
-            await campo_respuesta.update_async()
 
     # Función cerrar la app
     def cerrar_click(e):
@@ -358,7 +421,7 @@ async def main(page: ft.Page):
 
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
-        page.set_clipboard(campo_respuesta.value)
+        page.set_clipboard(respuesta_ia_text.value)
         page.snack_bar = ft.SnackBar(ft.Text("¡Respuesta copiada y en formato Markdown!"))  # Crea el SnackBar
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()  # Actualiza la página para mostrar el SnackBar
@@ -418,12 +481,12 @@ async def main(page: ft.Page):
 
 
     # --------- Botones --------------------
-    btn_enviar = ft.ElevatedButton("Enviar", icon=ft.icons.SEND, visible=not config["usar_enter"])
-    btn_copiar_prompt = ft.ElevatedButton("Prompt", icon=ft.icons.FILE_COPY, on_click=copiar_prompt)
-    btn_reset_prompt = ft.ElevatedButton("Prompt", icon=ft.icons.DELETE)
-    btn_copiar_resp = ft.ElevatedButton("Copiar Respuesta", icon=ft.icons.OFFLINE_SHARE_ROUNDED, on_click=copiar_respuesta)
-    btn_resetear_todo = ft.ElevatedButton("Nuevo Chat", icon=ft.icons.CHAT)
-    btn_cerrar = ft.ElevatedButton("Salir", icon=ft.icons.EXIT_TO_APP)
+    btn_enviar = ft.ElevatedButton("Enviar", icon=ft.Icons.SEND, visible=not config["usar_enter"])
+    btn_copiar_prompt = ft.ElevatedButton("Prompt", icon=ft.Icons.FILE_COPY, on_click=copiar_prompt)
+    btn_reset_prompt = ft.ElevatedButton("Prompt", icon=ft.Icons.DELETE)
+    btn_copiar_resp = ft.ElevatedButton("Copiar Respuesta", icon=ft.Icons.OFFLINE_SHARE_ROUNDED, on_click=copiar_respuesta)
+    btn_resetear_todo = ft.ElevatedButton("Nuevo Chat", icon=ft.Icons.CHAT)
+    btn_cerrar = ft.ElevatedButton("Salir", icon=ft.Icons.EXIT_TO_APP)
     # ---------- Fin Botones ----------------
 
     # Asignación de Eventos a los botones
@@ -461,7 +524,7 @@ async def main(page: ft.Page):
     container_panel_respuesta = ft.Container(
         content=respuesta_area,
         padding=20,
-        border=ft.border.all(1, ft.colors.GREY_300),
+        border=ft.border.all(1, ft.Colors.GREY_300),
         border_radius=10,
         expand=True,
     )
@@ -513,4 +576,4 @@ async def main(page: ft.Page):
     )
 
 # Ejecución del Programa
-ft.app(target=main)
+asyncio.run(ft.app(target=main))
