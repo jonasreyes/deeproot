@@ -152,7 +152,7 @@ async def main(page: ft.Page):
     
     # Prompt del usuario que será devuelto a la interfáz
     respuesta_ia_text = ft.Markdown(
-        f""
+        f"\n\n"
     )
 
     # referencia para scroll de respuesta
@@ -201,12 +201,13 @@ async def main(page: ft.Page):
                 text_align=ft.TextAlign.CENTER, 
                 selectable=True
             )
+            respuesta_ia_text.value +="\n\n"
 
-            # limpiando los datos.
             contenedor_respuesta_prompt_md.content=respuesta_prompt_md 
             campo_respuesta.controls.append(contenedor_respuesta_prompt_md)
             campo_respuesta.controls.append(respuesta_ia_text)
             await campo_respuesta.update_async()
+            input_prompt.focus
 
             # Procesar cada chunk de la respuesta
             for chunk in respuesta:
@@ -215,7 +216,7 @@ async def main(page: ft.Page):
                     respuesta_ai_text.value += chunk_texto
                     await campo_respuesta.update_async()
                     await asyncio.sleep(0)
-                    print(f"Campo: {chunk_texto} -> respuesta_ai_text: {respuesta_ia_text}\nRespuestaPromptMD:{respuesta_prompt_md}")
+                    print(f"Campo: {chunk_texto}")
 
         except asyncio.TimeoutError:
             # En caso de que el servidor no responda en el tiempo especificado
@@ -237,6 +238,9 @@ async def main(page: ft.Page):
         prompt = input_prompt.value
         if prompt.strip():
             input_prompt.value = ""
+
+            await campo_respuesta.update_async()
+
             await input_prompt.update_async()
             if not config["api_key"]:
                 campo_respuesta.controls.append(ft.Text("Error: API Key no configurada."))
@@ -287,7 +291,7 @@ async def main(page: ft.Page):
     )
     # definición inicial del swicth, garantiza que al iniciar la app esté en el estado 
     # de la configuación especificada en el archivo deeproot.json
-    switch_enter.value=input_prompt.multiline
+    switch_enter.value=config["usar_enter"]
 
     # Lista desplegable para seleccionar el modelo
     lista_modelos = ft.Dropdown(
@@ -327,9 +331,11 @@ async def main(page: ft.Page):
         [
             ft.Text("Enviar Prompt con tecla Enter", size=16, weight=ft.FontWeight.BOLD),
             switch_enter,
+            btn_guardar_conf,
             ft.Text("Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
             ft.Text("Code Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
             ft.Text("Extensiones Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("Selector nro. Tokens - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
 
 
 
@@ -620,7 +626,7 @@ async def main(page: ft.Page):
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             expand=True,
-        ),
+        )
     )
 
 # Ejecución del Programa
