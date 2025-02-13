@@ -20,17 +20,17 @@ Contacto:
 "La verdadera inteligencia no solo resuelve problemas, sino que cultiva la vida..."
 #PatriaYSoftwareLibre
 """
-import flet as ft
+
 import openai
 import asyncio
 from openai import OpenAIError, APIConnectionError, APIError
 
 # Inicializando cliente OpenAI
-async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta,contenedor_respuesta_prompt_md, respuesta_ai_text, modelo, api_key, url_base):
+async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta, modelo, api_key, url_base):
     try:
         client = openai.OpenAI(api_key=api_key, base_url=url_base)
 
-        campo_respuesta.controls.append(ft.Text("Procesando tu solicitud..."))
+        campo_respuesta.value = "Procesando tu solicitud..."
         await campo_respuesta.update_async()
 
         respuesta = client.chat.completions.create(
@@ -40,44 +40,32 @@ async def enviar_consulta_a_deepseek(page, prompt, campo_respuesta,contenedor_re
                 {"role": "user", "content": prompt},
             ],
             temperature=0,
-            stream=True,
+            stream=True
         )
-
-        respuesta_ai_text.value = ft.Text("Probando RespuestaAIText, aquí el texto **puede** contener **Markdown**.")
-        # Respuestas - EXPERIMENTAL
-        # Respuesta que devuelve la IA
-        respuesta_prompt_md = ft.Text(
-            prompt, 
-            weight=ft.FontWeight.W_600, 
-            size=20, color="blue900", 
-            text_align=ft.TextAlign.CENTER, 
-            selectable=True
-        )
-        contenedor_respuesta_prompt_md.controls.append(respuesta_prompt_md)
-        contenedor_respuesta_prompt_md.update_async()
+        # colectores
+        colectados_chunks = []
+        colectados_mensajes = []
 
         # Procesar cada chunk de la respuesta
-        campo_respuesta.controls.append(contenedor_respuesta_prompt_md)
-        campo_respuesta.update_async()
+        campo_respuesta.value = ""  # Limpiamos el mensaje de "Procesando..."
         for chunk in respuesta:
             if chunk.choices[0].delta.content:
                 chunk_texto = chunk.choices[0].delta.content
-                respuesta_ai_text.value += chunk_texto
-                campo_respuesta.controls.append(respuesta_ai_text)
+                campo_respuesta.value += chunk_texto
                 print(f"Campo: {chunk_texto}")
                 await campo_respuesta.update_async()  # Se actualiza la interfaz en tiempo real
                 await asyncio.sleep(0)
 
     except asyncio.TimeoutError:
         # En caso de que el servidor no responda en el tiempo especificado
-        campo_respuesta.controls.append(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."))
+        campo_respuesta.value = "Error: El servidor no respondió a tiempo. Intenta de nuevo."
         await campo_respuesta.update_async()
     except (APIError, APIConnectionError, OpenAIError) as e:
         # Manejo de errores con la API
-        campo_respuesta.controls.append(ft.Text(f"Error de conexión con la IA: {str(e)}"))
+        campo_respuesta.value = f"Error de conexión con la IA: {str(e)}"
         await campo_respuesta.update_async()
     except Exception as e:
         # Manejo de cualquier otro error no esperado
-        campo_respuesta.controls.append(ft.Text(f"Error inesperado: {str(e)}"))
+        campo_respuesta.value = f"Error inesperado: {str(e)}"
         await campo_respuesta.update_async()
 

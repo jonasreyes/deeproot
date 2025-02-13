@@ -64,7 +64,7 @@ def guardar_configuracion(config):
     with open(CONFIG_FILE, "w") as f:
         json.dump(config, f)
 
-# Cargar configuración
+# Cargar configuración e inicialización de variables importantes
 config = cargar_configuracion()
 
 # Interfáz gráfica con Flet
@@ -136,8 +136,8 @@ async def main(page: ft.Page):
     # Respuesta que devuelve la IA
     respuesta_prompt_md = ft.Text(
         "Bienvenido a DeepRoot Cliente API de DeepSeek AI", 
-        weight=ft.FontWeight.W_600, 
-        size=20, color="blue900", 
+        weight=ft.FontWeight.W_800, 
+        size=16, color="blue900", 
         text_align=ft.TextAlign.CENTER, 
         selectable=True
     )
@@ -166,6 +166,7 @@ async def main(page: ft.Page):
         ],
         expand=True,
         spacing=10,
+        auto_scroll=True
     )
 
     #campo_respuesta.controls.clear()
@@ -232,7 +233,7 @@ async def main(page: ft.Page):
 
 
     # Construyendo componentes de la interfáz
-    async def on_submit(e):
+    async def on_submit(e=None):
         prompt = input_prompt.value
         if prompt.strip():
             input_prompt.value = ""
@@ -250,15 +251,21 @@ async def main(page: ft.Page):
                 respuesta_area_ref.current.scroll_to(offset=-1, duration=1000)
             except asyncio.TimeoutError:
                 await campo_respuesta.controls.append(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."))
-                campo_respuesta.update_async()
+                await campo_respuesta.update_async()
 
-            input_prompt.value = ""  # Recibida la respuesta limpiamos el campo de consulta
-            input_prompt.focus()  # Limpiado el campo de consulta, procedemos a enfocar el campo (usabilidad)
-            await input_prompt.update_async()
         else:
             campo_respuesta.controls.append(ft.Text("Por favor, escribe una consulta."))
             await campo_respuesta.update_async()
 
+    # Alternativa para usar enter
+    def on_usar_enter(e):
+        config["usar_enter"]=switch_enter.value
+        guardar_configuracion(config)
+        input_prompt.multiline = not config["usar_enter"]
+        #btn_enviar.visible = not config["usar_enter"]
+        btn_enviar.visible = input_prompt.multiline
+        input_prompt.on_submit = on_submit if config["usar_enter"] else None
+        page.update()
 
     #: str: Campo de ingreso de consulta o prompt
     input_prompt = ft.TextField(
@@ -267,16 +274,20 @@ async def main(page: ft.Page):
         expand=True,
         min_lines=2,
         max_lines=4,
-        #bgcolor=ft.colors.BLUE_400,
-        on_submit=lambda e: on_submit(e) if config["usar_enter"] else False
+        border_radius=10,
+        multiline=False
     )
+    # definición inicial del modo multiline del campo prompt
+    input_prompt.multiline = config["usar_enter"]
 
     # switch para enviar con enter
     switch_enter = ft.Switch(
-        value=config["usar_enter"],
-        on_change=lambda e: actualizar_configuracion("usar_enter", e.control.value),
-        disabled=True
+        value=False,
+        on_change=lambda e: on_usar_enter(e)
     )
+    # definición inicial del swicth, garantiza que al iniciar la app esté en el estado 
+    # de la configuación especificada en el archivo deeproot.json
+    switch_enter.value=input_prompt.multiline
 
     # Lista desplegable para seleccionar el modelo
     lista_modelos = ft.Dropdown(
@@ -359,14 +370,8 @@ async def main(page: ft.Page):
     def actualizar_configuracion(clave, valor):
         config[clave] = valor
         guardar_configuracion(config)
-        if clave == "usar_enter":
-            input_prompt.multiline = not valor
-            btn_enviar.visible = not valor
-            page.update()
-        else:
-            input_prompt.multiline = True
-            btn_enviar.visible = True
-            page.update()
+        page.update()
+
 
     # Función de aplicación del theme
     def aplicar_theme(theme):
@@ -405,10 +410,10 @@ async def main(page: ft.Page):
 
     # Resetear todos los campos
     def resetear_campos(e):
-        campo_respuesta.value = ""
+        campo_respuesta.controls.clear()
         input_prompt.value = ""
         input_prompt.focus()
-        page.snack_bar = ft.SnackBar(ft.Text("Consultas reiniciadas"), bgcolor=ft.Colors.GREEN)  # Crea el SnackBar
+        page.snack_bar = ft.SnackBar(ft.Text("¡Listo tu nuevo Chat!"), bgcolor=ft.Colors.GREEN)  # Crea el SnackBar
         page.snack_bar.open = True  # Abre el SnackBar
         page.update()
 
@@ -481,19 +486,51 @@ async def main(page: ft.Page):
 
 
     # --------- Botones --------------------
-    btn_enviar = ft.ElevatedButton("Enviar", icon=ft.Icons.SEND, visible=not config["usar_enter"])
-    btn_copiar_prompt = ft.ElevatedButton("Prompt", icon=ft.Icons.FILE_COPY, on_click=copiar_prompt)
-    btn_reset_prompt = ft.ElevatedButton("Prompt", icon=ft.Icons.DELETE)
-    btn_copiar_resp = ft.ElevatedButton("Copiar Respuesta", icon=ft.Icons.OFFLINE_SHARE_ROUNDED, on_click=copiar_respuesta)
-    btn_resetear_todo = ft.ElevatedButton("Nuevo Chat", icon=ft.Icons.CHAT)
-    btn_cerrar = ft.ElevatedButton("Salir", icon=ft.Icons.EXIT_TO_APP)
+    btn_enviar = ft.ElevatedButton("Enviar", icon=ft.Icons.SEND)
+    btn_copiar_prompt=ft.IconButton(
+        icon=ft.Icons.FILE_COPY,
+        icon_color='blue400',
+        icon_size=48,
+        tooltip="Borrar Prompt",
+        on_click=copiar_prompt
+    )
+
+    btn_copiar_resp=ft.IconButton(
+        icon=ft.Icons.OFFLINE_SHARE_ROUNDED,
+        icon_color='blue400',
+        icon_size=48,
+        tooltip="Copiar Respuesta IA",
+        on_click=copiar_respuesta
+    )
+
+    btn_reset_prompt=ft.IconButton(
+        icon=ft.Icons.DELETE_FOREVER_ROUNDED,
+        icon_color='blue400',
+        icon_size=48,
+        tooltip="Copiar Prompt",
+        on_click=reset_prompt
+    )
+
+    btn_nuevo_chat=ft.IconButton(
+        icon=ft.Icons.CHAT,
+        icon_color='blue400',
+        icon_size=48,
+        tooltip="Nuevo Chat",
+        on_click=on_resetear_campos
+    )
+
+    btn_cerrar=ft.IconButton(
+        icon=ft.Icons.EXIT_TO_APP,
+        icon_color='blue500',
+        icon_size=48,
+        tooltip="Salir de DeepRoot",
+        on_click=on_cerrar_click
+    )
+    #btn_cerrar = ft.ElevatedButton("Salir", icon=ft.Icons.EXIT_TO_APP)
     # ---------- Fin Botones ----------------
 
     # Asignación de Eventos a los botones
     btn_enviar.on_click = on_submit
-    btn_reset_prompt.on_click = reset_prompt
-    btn_resetear_todo.on_click = on_resetear_campos
-    btn_cerrar.on_click = on_cerrar_click
 
     campos_prompt = ft.Row(
         controls=[
@@ -508,7 +545,19 @@ async def main(page: ft.Page):
         content=campos_prompt
     )
 
-    fila_prompt_botones = ft.Row([btn_copiar_prompt,btn_reset_prompt,btn_copiar_resp,btn_resetear_todo,btn_cerrar], wrap=True, spacing=10, scroll=True)
+    fila_prompt_botones = ft.Row(
+        [
+            btn_reset_prompt,
+            btn_copiar_prompt,
+            btn_nuevo_chat,
+            btn_copiar_resp,
+            btn_cerrar
+        ], 
+        spacing=4,
+        scroll=True,
+        alignment=ft.MainAxisAlignment.CENTER,
+        
+    )
 
     respuesta_area = ft.Column(
         ref=respuesta_area_ref,
@@ -533,10 +582,11 @@ async def main(page: ft.Page):
     tab_chat = ft.Column(
         [
             container_panel_respuesta,
-            #fila_panel_respuesta,
+            fila_prompt,
+            fila_prompt_botones
         ],
         expand=True,
-        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
 
     container_panel_configuracion = ft.Container(
@@ -554,8 +604,6 @@ async def main(page: ft.Page):
 
     panel_prompt = ft.Column(
         [
-            ft.Container(),
-            ft.Divider(),
             fila_prompt,
             fila_prompt_botones
         ],
@@ -568,7 +616,7 @@ async def main(page: ft.Page):
         ft.Column(
             controls=[
                 container_panel_configuracion,
-                panel_prompt
+                #panel_prompt
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             expand=True,
