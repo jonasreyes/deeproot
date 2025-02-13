@@ -489,7 +489,7 @@ async def main(page: ft.Page):
     btn_enviar = ft.ElevatedButton("Enviar", icon=ft.Icons.SEND)
     btn_copiar_prompt=ft.IconButton(
         icon=ft.Icons.FILE_COPY,
-        icon_color='blue400',
+        icon_color='gray400',
         icon_size=48,
         tooltip="Borrar Prompt",
         on_click=copiar_prompt
@@ -505,7 +505,7 @@ async def main(page: ft.Page):
 
     btn_reset_prompt=ft.IconButton(
         icon=ft.Icons.DELETE_FOREVER_ROUNDED,
-        icon_color='blue400',
+        icon_color='orange400',
         icon_size=48,
         tooltip="Copiar Prompt",
         on_click=reset_prompt
@@ -513,7 +513,7 @@ async def main(page: ft.Page):
 
     btn_nuevo_chat=ft.IconButton(
         icon=ft.Icons.CHAT,
-        icon_color='blue400',
+        icon_color='green400',
         icon_size=48,
         tooltip="Nuevo Chat",
         on_click=on_resetear_campos
@@ -521,7 +521,7 @@ async def main(page: ft.Page):
 
     btn_cerrar=ft.IconButton(
         icon=ft.Icons.EXIT_TO_APP,
-        icon_color='blue500',
+        icon_color='red400',
         icon_size=48,
         tooltip="Salir de DeepRoot",
         on_click=on_cerrar_click
