@@ -99,6 +99,7 @@ async def main(page: ft.Page):
     page.padding = 20
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
+    page.auto_scroll = True
 
     # en futura actualización facilitaré la personalización completa del theme.
     page.theme = ft.Theme(
