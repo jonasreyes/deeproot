@@ -3,7 +3,7 @@ Nombre de la aplicación: DEEPROOT
 Versión: 0.0.1
 Autor: Jonás Antonio Reyes Casanova (jonasroot)
 Fecha de creación: 28-01-2025
-Última actualización: 09-02-2025
+Última actualización: 17-02-2025
 
 Descripción:
 Esta aplicación es un cliente de escritorio y móvil para facilitar el acceso y disfrute del Servicio API de DeepSeek. Se requiere de un token de DeepSeek Platform para poder funcionar. Es un desarrollo independiente, inspirado en los valores del Software Libre en Venezuela. Es resultado de los incentivos éticos de la Universidad Bolivariana de Venezuela y la Comunidad de Canaima GNU/Linux.
