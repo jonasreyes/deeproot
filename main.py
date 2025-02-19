@@ -33,7 +33,6 @@ import locale
 from datetime import datetime
 
 # contexto de tiempo
-locale.setlocale(locale.LC_TIME, 'es_VE.UTF-8')
 hoy = datetime.now()
 fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
 
