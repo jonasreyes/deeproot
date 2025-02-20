@@ -80,39 +80,22 @@ LICENCIA = "GNU/GPL V3"
 EXTENSION_SET = config["extension_set"]
 CODE_THEME_CLARO = config["code_theme_claro"]
 CODE_THEME_OSCURO = config["code_theme_oscuro"]
-CODE_THEME = ""
+CODE_THEME = CODE_THEME_CLARO
 
-# Función Actualizar Markdown
-def actualizar_markdown(campo, code_theme="gruvbox-light", extension_set="gitHubWeb", selectable=True, auto_follow_links=True):
-    campo.extension_set = extension_set
-    campo.code_theme = code_theme
-    campo.selectable = selectable
-    campo.auto_follow_links = auto_follow_links
-    campo.update()
 
 
 async def main(page: ft.Page):
-    # función para identificar la plataforma huesped de DeepRoot
-    def get_platform():
-        plataforma = page.platform.value
-        platform_ui = ""
 
-        # bases para modificar interfáz según la plataforma
-        if plataforma in ["linux","macos","windows"]:
-            page.title=f"{APP_NAME} Escritorio - {APP_LEMA}"
-            platform_ui = "escritorio"
-        elif plataforma in ["android", "ios"]:
-            page.title=f"{APP_NAME} Móvil - {APP_LEMA}"
-            platform_ui = "movil"
-        else:
-            page.title=APP_NAME
-            platform_ui = "escritorio"
-
-        return page.platform.value
-
+    # Función Actualizar Markdown
+    def actualizar_markdown(campo, code_theme="gruvbox-light", extension_set="gitHubWeb", selectable=True, auto_follow_links=True):
+        campo.extension_set = extension_set
+        campo.code_theme = code_theme
+        campo.selectable = selectable
+        campo.auto_follow_links = auto_follow_links
+        campo.update()
 
     # Configuración del theme inicial
-    dr_platform = get_platform()
+    dr_platform = get_platform(page, APP_NAME, APP_LEMA)
     page.window.width = 400
     page.window.height = 800
     page.padding = 20
@@ -122,7 +105,7 @@ async def main(page: ft.Page):
 
     # en futura actualización facilitaré la personalización completa del theme.
     page.theme = ft.Theme(
-        color_scheme_seed=ft.Colors.BLUE,
+        color_scheme_seed=ft.Colors.BLUE_900,
     )
 
     # Componentes de la interfáz
@@ -172,7 +155,9 @@ async def main(page: ft.Page):
     
     # Prompt del usuario que será devuelto a la interfáz
     respuesta_ia_text = ft.Markdown(
-        f"\n\n"
+        f"\n\n",
+        extension_set=EXTENSION_SET,
+        code_theme=CODE_THEME
     )
 
     # referencia para scroll de respuesta
@@ -380,8 +365,8 @@ async def main(page: ft.Page):
 
     acercade = ft.Markdown(
         acerca.de,
-        extension_set="gitHubWeb",
-        code_theme="gruvbox-light"
+        extension_set=EXTENSION_SET,
+        code_theme=CODE_THEME
     )
     # panel configuración modelos
     tab_acerca = ft.Column(
@@ -437,6 +422,7 @@ async def main(page: ft.Page):
     # Resetear todos los campos
     def resetear_campos(e):
         campo_respuesta.controls.clear()
+        page.update_async()
         input_prompt.value = ""
         input_prompt.focus()
         page.snack_bar = ft.SnackBar(ft.Text("¡Listo tu nuevo Chat!"), bgcolor=ft.Colors.GREEN)  # Crea el SnackBar
