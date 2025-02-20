@@ -29,6 +29,7 @@ import json
 import os
 import modules.themes as themes
 import acerca
+from modules.interfaz import *
 import locale
 from datetime import datetime
 
@@ -91,8 +92,27 @@ def actualizar_markdown(campo, code_theme="gruvbox-light", extension_set="gitHub
 
 
 async def main(page: ft.Page):
+    # función para identificar la plataforma huesped de DeepRoot
+    def get_platform():
+        plataforma = page.platform.value
+        platform_ui = ""
+
+        # bases para modificar interfáz según la plataforma
+        if plataforma in ["linux","macos","windows"]:
+            page.title=f"{APP_NAME} Escritorio - {APP_LEMA}"
+            platform_ui = "escritorio"
+        elif plataforma in ["android", "ios"]:
+            page.title=f"{APP_NAME} Móvil - {APP_LEMA}"
+            platform_ui = "movil"
+        else:
+            page.title=APP_NAME
+            platform_ui = "escritorio"
+
+        return page.platform.value
+
+
     # Configuración del theme inicial
-    page.title = f"{APP_NAME} {APP_LEMA}"
+    dr_platform = get_platform()
     page.window.width = 400
     page.window.height = 800
     page.padding = 20
@@ -493,46 +513,49 @@ async def main(page: ft.Page):
 
     # --------- Botones --------------------
     btn_enviar = ft.ElevatedButton("Enviar", icon=ft.Icons.SEND)
-    btn_copiar_prompt=ft.IconButton(
-        icon=ft.Icons.FILE_COPY,
-        icon_color='gray400',
-        icon_size=48,
-        tooltip="Borrar Prompt",
-        on_click=copiar_prompt
-    )
+    btn_copiar_prompt=ft.Column(
+            [
+            ft.IconButton(
+                icon=ft.Icons.FILE_COPY,
+                icon_color='gray400',
+                icon_size=48,
+                tooltip="Borrar Prompt",
+                on_click=copiar_prompt
+            ),
+            ft.Text("Prompt", size=12)
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=2
+            )
 
-    btn_copiar_resp=ft.IconButton(
-        icon=ft.Icons.OFFLINE_SHARE_ROUNDED,
-        icon_color='blue400',
-        icon_size=48,
-        tooltip="Copiar Respuesta IA",
-        on_click=copiar_respuesta
-    )
+    btn_copiar_resp = get_icon_boton_prompt(
+            ft.Icons.OFFLINE_SHARE_ROUNDED,
+            'blue400',
+            'Copiar Respuesta IA',
+            'Respuesta',copiar_respuesta
+            )
 
-    btn_reset_prompt=ft.IconButton(
-        icon=ft.Icons.DELETE_FOREVER_ROUNDED,
-        icon_color='orange400',
-        icon_size=48,
-        tooltip="Copiar Prompt",
-        on_click=reset_prompt
-    )
+    btn_reset_prompt = get_icon_boton_prompt(
+            ft.Icons.DELETE_FOREVER_ROUNDED,
+            'orange400',
+            'Copiar Prompt',
+            'Borrar',reset_prompt
+            )
 
-    btn_nuevo_chat=ft.IconButton(
-        icon=ft.Icons.CHAT,
-        icon_color='green400',
-        icon_size=48,
-        tooltip="Nuevo Chat",
-        on_click=on_resetear_campos
-    )
+    btn_nuevo_chat = get_icon_boton_prompt(
+            ft.Icons.CHAT,
+            'green400',
+            'Nuevo Chat',
+            '+Chat',on_resetear_campos
+            )
 
-    btn_cerrar=ft.IconButton(
-        icon=ft.Icons.EXIT_TO_APP,
-        icon_color='red400',
-        icon_size=48,
-        tooltip="Salir de DeepRoot",
-        on_click=on_cerrar_click
-    )
-    #btn_cerrar = ft.ElevatedButton("Salir", icon=ft.Icons.EXIT_TO_APP)
+    btn_cerrar = get_icon_boton_prompt(
+            ft.Icons.EXIT_TO_APP,
+            'red400',
+            'Salir de DeepRoot',
+            'Salir',on_cerrar_click
+            )
+
     # ---------- Fin Botones ----------------
 
     # Asignación de Eventos a los botones
