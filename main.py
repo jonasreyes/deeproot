@@ -198,7 +198,11 @@ async def main(page: ft.Page):
                     content = ft.Markdown(
                         value = mensaje, 
                         extension_set=EXTENSION_SET, 
-                        code_theme=CODE_THEME),
+                        code_theme=CODE_THEME,
+                        selectable = True,
+                        auto_follow_links = True,
+
+                    ),
                     padding = 10 if es_usuario else 5,
                     bgcolor = NARANJA_MINCYT if es_usuario else None,
                     border_radius = 10,
@@ -271,8 +275,6 @@ async def main(page: ft.Page):
                 if chunk.choices[0].delta.content:
                     chunk_texto = chunk.choices[0].delta.content
                     respuesta_ia_burbuja.controls[0].content.value += chunk_texto
-                    #caja_respuesta_temp += chunk_texto
-                    #respuesta_ia_text.value += chunk_texto
                     await campo_respuesta.update_async()
                     await asyncio.sleep(0)
                     print(f"Campo: {chunk_texto}")
@@ -349,9 +351,7 @@ async def main(page: ft.Page):
         config["api_key"] = campo_api_key.value
         config["url_base"] = campo_url_base.value
         guardar_configuracion(config)
-        page.snack_bar = ft.SnackBar(ft.Text("¡Configuración Guardada!"))  # Crea el SnackBar
-        page.snack_bar.bgcolor = ft.Colors.GREEN
-        page.snack_bar.open = True  # Abre el SnackBar
+        page.open(ft.SnackBar(ft.Text("¡Configuración Guardada!"), bgcolor=TEAL_MINCYT))
         page.update()
 
     # Boton Guardar la Configuración Avanzada!
@@ -441,36 +441,41 @@ async def main(page: ft.Page):
     def reset_prompt(e):
         input_prompt.value = ""
         input_prompt.focus()
-        page.snack_bar = ft.SnackBar(ft.Text("Prompt borrado!"))  # Crea el SnackBar
-        page.snack_bar.open = True  # Abre el SnackBar
+        page.open(ft.SnackBar(ft.Text("¡Prompt borrado!"), bgcolor=TEAL_MINCYT))
         page.update()
 
     # Resetear todos los campos
     def resetear_campos(e):
         campo_respuesta.controls.clear()
-        page.update_async()
         input_prompt.value = ""
         input_prompt.focus()
-        page.snack_bar = ft.SnackBar(ft.Text("¡Listo tu nuevo Chat!"), bgcolor=ft.Colors.GREEN)  # Crea el SnackBar
-        page.snack_bar.open = True  # Abre el SnackBar
+        page.open(ft.SnackBar(ft.Text("¡Ya puedes empezar una nueva conversación!"), bgcolor=TEAL_MINCYT))
         page.update()
 
     # Función para copiar el prompt al portapapeles
     def copiar_prompt(e):
         page.set_clipboard(input_prompt.value)
-        page.snack_bar = ft.SnackBar(ft.Text("Prompt copiado!"))  # Crea el SnackBar
-        page.snack_bar.open = True  # Abre el SnackBar
+        page.open(ft.SnackBar(ft.Text("¡Prompt copiado al portapapeles!"), bgcolor=TEAL_MINCYT))
         page.update()  # Actualiza la página para mostrar el SnackBar
 
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
-        page.set_clipboard(respuesta_ia_text.value)
-        page.snack_bar = ft.SnackBar(ft.Text("¡Respuesta copiada y en formato Markdown!"))  # Crea el SnackBar
-        page.snack_bar.open = True  # Abre el SnackBar
-        page.update()  # Actualiza la página para mostrar el SnackBar
+        conversaciones_text = ""
+        # Recorremos los controles en campo_respuesta
+        for control in campo_respuesta.controls:
+            if isinstance(control, ft.Row):
+                for child in control.controls:
+                    if isinstance(child, ft.Container):
+                        # Si el hijo es un contenedor, buscamos dentro de él
+                        if isinstance(child.content, ft.Markdown):
+                            conversaciones_text += child.content.value + "\n\n"
+                    elif isinstance(child, ft.Markdown):
+                        # Si el hijo es directamente un Markdown lo agregamos
+                        conversaciones_text += child.value + "\n\n"
 
-
-    # Gestion de dialogos de confirmación
+        page.set_clipboard(conversaciones_text)
+        page.open(ft.SnackBar(ft.Text("¡Respuestas copiadas al portapepeles y en formato Markdown!"), bgcolor=TEAL_MINCYT))
+        page.update()  # Actualiza la página para mostrar el SnackBa Gestion de dialogos de confirmación
     def on_resetear_campos(e):
         def cerrar_dialogo(e):
             dlg.open=False
@@ -491,9 +496,7 @@ async def main(page: ft.Page):
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
-
-        page.dialog=dlg
-        dlg.open = True
+        page.open(dlg)
         page.update()
 
     # Gestion de dialogos de cierre de la app
@@ -518,8 +521,7 @@ async def main(page: ft.Page):
             actions_alignment=ft.MainAxisAlignment.END,
         )
 
-        page.dialog=dlg
-        dlg.open = True
+        page.open(dlg)
         page.update()
 
 
@@ -658,7 +660,7 @@ async def main(page: ft.Page):
             expand=True,
         )
     )
-    await page.update_async()
+    page.update()
 
 # Ejecución del Programa
 ft.app(target=main)
