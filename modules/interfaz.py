@@ -6,7 +6,7 @@ def get_icon_boton_prompt(icon,icon_color,tooltip,text,funcion):
             ft.IconButton(
                 icon=icon,
                 icon_color=icon_color,
-                icon_size=46,
+                icon_size=32,
                 tooltip=tooltip,
                 on_click=funcion
             ),
@@ -36,4 +36,17 @@ def get_platform(e, APP_NAME, APP_LEMA):
 
     return e.platform.value
 
+# Función de Diágolos Alerta
+# def dialogo_alert(titulo,mensaje, funcion_si,funcion_no=cerrar_dialogo, modal=True):
+#     dlg = ft.AlertDialog(
+#         modal=modal,
+#         title=titulo,
+#         content=ft.Text(mensaje),
+#         actions=[
+#             ft.TextButton("Sí", on_click=funcion_si),
+#             ft.TextButton("No", on_click=funcion_no),
+#         ],
+#         actions_alignment=ft.MainAxisAlignment.END,
+#     )
+#     return dlg
 

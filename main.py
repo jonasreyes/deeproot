@@ -32,7 +32,8 @@ import acerca
 from modules.interfaz import *
 import locale
 from datetime import datetime
-
+import plyer
+import urllib.parse
 # contexto de tiempo
 hoy = datetime.now()
 fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
@@ -167,6 +168,7 @@ async def main(page: ft.Page):
 
     # str: Campo de salida de la respuesta de la IA, el estilo y formato se dará desde la fución ectualizar_markdown()
     campo_respuesta = ft.ListView(
+        ref=respuesta_area_ref,
         controls=[
             contenedor_respuesta_prompt_md,
             respuesta_ia_text
@@ -204,7 +206,7 @@ async def main(page: ft.Page):
 
                     ),
                     padding = 10 if es_usuario else 5,
-                    bgcolor = NARANJA_MINCYT if es_usuario else None,
+                    bgcolor = NARANJA_MINCYT if es_usuario else False,
                     border_radius = 10,
                 )
             ]
@@ -222,6 +224,7 @@ async def main(page: ft.Page):
         if not config["api_key"]:
             # campo_respuesta es un ListView
             campo_respuesta.controls.append(ft.Text("Error: API Key no configurada."))
+            #page.update()
             await campo_respuesta.update_async()
             return
 
@@ -229,11 +232,12 @@ async def main(page: ft.Page):
         if not prompt:
             campo_respuesta.controls.append(ft.Text("Por favor, escribe una consulta."))
             await campo_respuesta.update_async()
+            #page.update()
             return
 
         # Agregamos en msj del usuario al Chat.
         input_prompt.value = ""
-        await input_prompt.focus_async()
+        input_prompt.focus()
 
         campo_respuesta.controls.append(burbuja_mensaje(prompt, True))
         await campo_respuesta.update_async()
@@ -279,8 +283,9 @@ async def main(page: ft.Page):
                     await asyncio.sleep(0)
                     print(f"Campo: {chunk_texto}")
 
-            input_prompt.focus
-            await campo_respuesta.scroll_to_async(offset=-1, duration=1000)
+            input_prompt.focus()
+            campo_respuesta.scroll_to(offset=-1, duration=1000)
+            await campo_respuesta.update_async()
 
         except asyncio.TimeoutError:
             # En caso de que el servidor no responda en el tiempo especificado
@@ -299,9 +304,12 @@ async def main(page: ft.Page):
         config["usar_enter"]=switch_enter.value
         guardar_configuracion(config)
         input_prompt.multiline = not config["usar_enter"]
-        #btn_enviar.visible = not config["usar_enter"]
-        btn_enviar.visible = input_prompt.multiline
-        input_prompt.on_submit = enviar_prompt if config["usar_enter"] else None
+        btn_enviar.visible = not config["usar_enter"]
+        input_prompt.on_submit = enviar_prompt if config["usar_enter"] else False
+        if config["usar_enter"]:
+            page.open(ft.SnackBar(ft.Text("¡Puedes enviar tu consulta pulsando la Tecla Enter! Botón enviar ocultado."), bgcolor=TEAL_MINCYT))
+        else:
+            page.open(ft.SnackBar(ft.Text("Desactivada opción de envío de consulta pulsando la tecla 'Enter'. Restablecido el Botón de envío."), bgcolor=TEAL_MINCYT))
         page.update()
 
     #: str: Campo de ingreso de consulta o prompt
@@ -312,19 +320,15 @@ async def main(page: ft.Page):
         min_lines=2,
         max_lines=4,
         border_radius=10,
-        multiline=False
+        multiline=not config["usar_enter"],
+        on_submit=enviar_prompt
     )
-    # definición inicial del modo multiline del campo prompt
-    input_prompt.multiline = config["usar_enter"]
 
     # switch para enviar con enter
     switch_enter = ft.Switch(
-        value=False,
+        value=config["usar_enter"],
         on_change=lambda e: on_usar_enter(e)
     )
-    # definición inicial del swicth, garantiza que al iniciar la app esté en el estado 
-    # de la configuación especificada en el archivo deeproot.json
-    switch_enter.value=config["usar_enter"]
 
     # Lista desplegable para seleccionar el modelo
     lista_modelos = ft.Dropdown(
@@ -362,14 +366,8 @@ async def main(page: ft.Page):
         [
             ft.Text("Enviar Prompt con tecla Enter", size=16, weight=ft.FontWeight.BOLD),
             switch_enter,
-            btn_guardar_conf,
-            ft.Text("Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
-            ft.Text("Code Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
-            ft.Text("Extensiones Theme - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
-            ft.Text("Selector nro. Tokens - Próxima Versión", size=16, weight=ft.FontWeight.BOLD),
-
-
-
+            #btn_guardar_conf,
+            ft.Text("Próxima Versión con muchas funcionalidades de personalización de la Interfáz", size=16, weight=ft.FontWeight.BOLD),
         ],
         spacing=10
     )
@@ -394,6 +392,7 @@ async def main(page: ft.Page):
         extension_set=EXTENSION_SET,
         code_theme=CODE_THEME
     )
+
     # panel configuración modelos
     tab_acerca = ft.Column(
         [
@@ -408,7 +407,6 @@ async def main(page: ft.Page):
         config[clave] = valor
         guardar_configuracion(config)
         page.update()
-
 
     # Función de aplicación del theme
     def aplicar_theme(theme):
@@ -458,8 +456,20 @@ async def main(page: ft.Page):
         page.open(ft.SnackBar(ft.Text("¡Prompt copiado al portapapeles!"), bgcolor=TEAL_MINCYT))
         page.update()  # Actualiza la página para mostrar el SnackBar
 
-    # Copiar Respuesta al portapapeles
-    def copiar_respuesta(e):
+    # comparte el chat cuando la plataforma de ejecución de la app lo permite.
+    def compartir_chat(e):
+        texto = get_chat(e)
+        if "android" in dr_platform:
+            #url = f"mailto:?body={urllib.parse.quote(texto)}"  # Para correo electrónico
+            url_android_ios = f"intent://send/#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT={urllib.parse.quote(texto)};end;"
+            page.launch_url(url_android_ios)  # Esto abrirá el diálogo de compartir en Android
+        elif "linux" in dr_platform:
+            os.system(f"xdg-open 'mailto:?body={texto}'")
+        page.open(ft.SnackBar(ft.Text(f"Se comparte el Chat para la plataforma {dr_platform}"), bgcolor=TEAL_MINCYT))
+        page.update()
+
+    # Obtener el chat actual
+    def get_chat(e):
         conversaciones_text = ""
         # Recorremos los controles en campo_respuesta
         for control in campo_respuesta.controls:
@@ -472,10 +482,14 @@ async def main(page: ft.Page):
                     elif isinstance(child, ft.Markdown):
                         # Si el hijo es directamente un Markdown lo agregamos
                         conversaciones_text += child.value + "\n\n"
+        return conversaciones_text
 
-        page.set_clipboard(conversaciones_text)
+    # Copiar Respuesta al portapapeles
+    def copiar_respuesta(e):
+        page.set_clipboard(get_chat(e))
         page.open(ft.SnackBar(ft.Text("¡Respuestas copiadas al portapepeles y en formato Markdown!"), bgcolor=TEAL_MINCYT))
         page.update()  # Actualiza la página para mostrar el SnackBa Gestion de dialogos de confirmación
+
     def on_resetear_campos(e):
         def cerrar_dialogo(e):
             dlg.open=False
@@ -526,8 +540,14 @@ async def main(page: ft.Page):
 
 
     # --------- Botones --------------------
-    #btn_enviar = ft.ElevatedButton("Enviar", icon=ft.Icons.SEND)
-    btn_enviar = ft.FloatingActionButton(icon=ft.Icons.SEND)
+    btn_enviar = ft.FloatingActionButton(icon=ft.Icons.SEND, visible=not config["usar_enter"])
+
+    btn_compartir_chat = get_icon_boton_prompt(
+            ft.Icons.SHARE,
+            AZUL_MINCYT,
+            'Compartir Chat',
+            'Compartir',compartir_chat
+            )
 
     btn_copiar_prompt = get_icon_boton_prompt(
             ft.Icons.FILE_COPY,
@@ -572,7 +592,7 @@ async def main(page: ft.Page):
     campos_prompt = ft.Row(
         controls=[
             input_prompt,
-            ft.Container(margin=ft.margin.only(left=10)),
+            ft.Container(margin=ft.margin.only(left=5)),
             btn_enviar
         ],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -585,10 +605,11 @@ async def main(page: ft.Page):
 
     fila_prompt_botones = ft.Row(
         [
-            btn_reset_prompt,
-            btn_copiar_prompt,
             btn_nuevo_chat,
+            btn_copiar_prompt,
             btn_copiar_resp,
+            btn_compartir_chat,
+            btn_reset_prompt,
             btn_cerrar
         ], 
         spacing=4,
@@ -598,7 +619,6 @@ async def main(page: ft.Page):
     )
 
     respuesta_area = ft.Column(
-        ref=respuesta_area_ref,
         controls=[
             campo_respuesta,
         ],
@@ -660,7 +680,6 @@ async def main(page: ft.Page):
             expand=True,
         )
     )
-    page.update()
 
 # Ejecución del Programa
 ft.app(target=main)
