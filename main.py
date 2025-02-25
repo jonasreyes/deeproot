@@ -32,8 +32,10 @@ import acerca
 from modules.interfaz import *
 import locale
 from datetime import datetime
-import plyer
 import urllib.parse
+from flet import FilePicker, FilePickerResultEvent
+import markdown
+
 # contexto de tiempo
 hoy = datetime.now()
 fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
@@ -70,6 +72,7 @@ config = cargar_configuracion()
 
 # Interfáz gráfica con Flet
 # Configuración de la API de DeepSeek
+locale.setlocale(locale.LC_TIME, 'es_VE.UTF-8')
 APP_NAME = "DeepRoot"
 APP_VERSION = "Alfa 0.0.1 - 2025"
 APP_LEMA = "Cliente DeepSeek API"
@@ -82,11 +85,21 @@ EXTENSION_SET = config["extension_set"]
 CODE_THEME_CLARO = config["code_theme_claro"]
 CODE_THEME_OSCURO = config["code_theme_oscuro"]
 CODE_THEME = CODE_THEME_CLARO
+
+# Colores personalizados
 VERDE_MINCYT = "#026E71"
 TEAL_MINCYT = "#02A7AB"
 AZUL_MINCYT = "#1D70B7"
 GRIS_MINCYT = "#9C9B9B"
 NARANJA_MINCYT = "#F08427"
+ROJO_FUTURO = "#E63022"
+NARANJA_FUTURO = "#EC6C3A"
+BEIGE_FUTURO = "#F8EFDC"
+AZUL_FUTURO = "#1440AD"
+AZUL_CIELO_FUTURO = "#A6D8E2"
+DORADO_FUTURO = "#EFC318"
+NEGRO_FUTURO = "#1F1E1E"
+
 
 async def main(page: ft.Page):
 
@@ -456,20 +469,66 @@ async def main(page: ft.Page):
         page.open(ft.SnackBar(ft.Text("¡Prompt copiado al portapapeles!"), bgcolor=TEAL_MINCYT))
         page.update()  # Actualiza la página para mostrar el SnackBar
 
-    # comparte el chat cuando la plataforma de ejecución de la app lo permite.
-    def compartir_chat(e):
-        texto = get_chat(e)
-        if "android" in dr_platform:
+    # Descarga el chat 
+    def descargar_chat(e:FilePickerResultEvent,path="almacenamiento/"):
+        ruta_chat_a_guardar = e.path
+        historial_chat = get_chat()
+
+        if ruta_chat_a_guardar:
+            try:
+                ahora = datetime.now()
+                fecha_ahora = ahora.strftime("%Y-%m-%d_%H%M%S")
+                nombre_archivo_historial_chat = f"deeproot_{dr_platform}_chat_con_{config['modelo']}_{fecha_ahora}"
+                archivo_historial_chat_md = f"{ruta_chat_a_guardar}{nombre_archivo_historial_chat}.md"
+
+                # Generamos el archivo markdown con el historial del chat
+                with open(archivo_historial_chat_md, "w", encoding="utf-8") as archivo:
+                    archivo.write(historial_chat)
+                    print("¡Chat guardado exitosamente!")
+                    page.open(ft.SnackBar(ft.Text(f"El historial de tu conversación con la IA {config['modelo']} se descargará en breve."), bgcolor=TEAL_MINCYT))
+            except Exception as e:
+                page.open(ft.SnackBar(ft.Text(f"Error guardando el archivo: ",e), bgcolor=ROJO_FUTURO))
+            page.update()
+
+
+    # Guardar descarga con filepicker
+    def guardar_chat(e: FilePickerResultEvent):
+        ruta_chat_a_guardar = e.path
+        if ruta_chat_a_guardar:
+            try:
+                with open(ruta_chat_a_guardar, "W", encoding="utf-8") as archivo:
+                    print("¡Chat guardado exitosamente!")
+                    archivo.write("historial_chat.md")
+            except Exception as e:
+                page.open(ft.SnackBar(ft.Text(f"Error guardando el archivo: ",e), bgcolor=ROJO_FUTURO))
+            page.update()
+
+    dialogo_guardar_chat = ft.FilePicker(on_result=descargar_chat)
+    page.overlay.append(dialogo_guardar_chat)
+
+    
+    # comparte el chat a correo electrónico cuando la plataforma de ejecución de la app lo permite.
+    def compartir_chat_por_email(e):
+        texto_markdown = get_chat()
+        texto = markdown.markdown(texto_markdown, extensions=['tables'])
+        #texto = get_chat()
+
+        ahora = datetime.now()
+        fecha_ahora = ahora.strftime("%A %d de %B/%Y | %H:%M:%S Hrs.")
+        asunto = f"{fecha_ahora} - Conversación con IA modelo '{config['modelo']}' con DeepRoot Cliente API para {dr_platform}."
+
+        if "android" == dr_platform:
             #url = f"mailto:?body={urllib.parse.quote(texto)}"  # Para correo electrónico
-            url_android_ios = f"intent://send/#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT={urllib.parse.quote(texto)};end;"
+            url_android_ios = f"intent://send/#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.SUBJECT={urllib.parse.quote(asunto)};type=text/plain;S.android.intent.extra.TEXT={urllib.parse.quote(texto)};end;"
             page.launch_url(url_android_ios)  # Esto abrirá el diálogo de compartir en Android
-        elif "linux" in dr_platform:
-            os.system(f"xdg-open 'mailto:?body={texto}'")
+        elif "linux" == dr_platform:
+            url_linux = f"mailto:?subject={urllib.parse.quote(asunto)}&body={urllib.parse.quote(texto)}"
+            os.system(f"xdg-open '{url_linux}'")
         page.open(ft.SnackBar(ft.Text(f"Se comparte el Chat para la plataforma {dr_platform}"), bgcolor=TEAL_MINCYT))
         page.update()
 
     # Obtener el chat actual
-    def get_chat(e):
+    def get_chat():
         conversaciones_text = ""
         # Recorremos los controles en campo_respuesta
         for control in campo_respuesta.controls:
@@ -486,7 +545,7 @@ async def main(page: ft.Page):
 
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
-        page.set_clipboard(get_chat(e))
+        page.set_clipboard(get_chat())
         page.open(ft.SnackBar(ft.Text("¡Respuestas copiadas al portapepeles y en formato Markdown!"), bgcolor=TEAL_MINCYT))
         page.update()  # Actualiza la página para mostrar el SnackBa Gestion de dialogos de confirmación
 
@@ -540,13 +599,21 @@ async def main(page: ft.Page):
 
 
     # --------- Botones --------------------
+    # Botón flotante de envío de consulta, se oculta cuando se decide usar la tecla enter para enviar.
     btn_enviar = ft.FloatingActionButton(icon=ft.Icons.SEND, visible=not config["usar_enter"])
+
+    btn_descargar_chat = get_icon_boton_prompt(
+            ft.Icons.DOWNLOAD,
+            AZUL_MINCYT,
+            'Descargar Chat',
+        'Descargar Chat',lambda e:dialogo_guardar_chat.save_file()
+            )
 
     btn_compartir_chat = get_icon_boton_prompt(
             ft.Icons.SHARE,
             AZUL_MINCYT,
-            'Compartir Chat',
-            'Compartir',compartir_chat
+            'Compartir Chat por Email',
+            'Compartir',compartir_chat_por_email
             )
 
     btn_copiar_prompt = get_icon_boton_prompt(
@@ -603,20 +670,36 @@ async def main(page: ft.Page):
         content=campos_prompt
     )
 
-    fila_prompt_botones = ft.Row(
-        [
-            btn_nuevo_chat,
-            btn_copiar_prompt,
-            btn_copiar_resp,
-            btn_compartir_chat,
-            btn_reset_prompt,
-            btn_cerrar
-        ], 
-        spacing=4,
-        scroll=True,
-        alignment=ft.MainAxisAlignment.CENTER,
-        
-    )
+    if dr_platform in ["windows","linux","macos"]:
+        fila_prompt_botones = ft.Row(
+            [
+                btn_nuevo_chat,
+                btn_copiar_prompt,
+                btn_copiar_resp,
+                btn_compartir_chat,
+                btn_descargar_chat,
+                btn_reset_prompt,
+                btn_cerrar
+            ], 
+            spacing=4,
+            scroll=True,
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+        page.update()
+    else:
+        fila_prompt_botones = ft.Row(
+            [
+                btn_nuevo_chat,
+                btn_copiar_prompt,
+                btn_copiar_resp,
+                btn_reset_prompt,
+                btn_cerrar
+            ], 
+            spacing=4,
+            scroll=True,
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+        page.update()
 
     respuesta_area = ft.Column(
         controls=[
