@@ -40,6 +40,12 @@ import markdown
 hoy = datetime.now()
 fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
 
+# hora para la IA
+def get_hoy():
+    hoy = datetime.now()
+    fecha_de_hoy = hoy.strftime("(Hoy es %A %d de %B del año %Y y son las %H:%M:%S hora de Caracas Venezuela.)")
+    return fecha_de_hoy
+
 # ARCHIVO DE CONFIGURACIÓN
 CONFIG_FILE = "deeproot.json"
 
@@ -105,8 +111,8 @@ async def main(page: ft.Page):
 
     # Configuración del theme inicial
     dr_platform = get_platform(page, APP_NAME, APP_LEMA)
-    page.window.width = 400
-    page.window.height = 800
+    page.window.width = 512
+    page.window.height = 768
     page.padding = 20
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
@@ -232,31 +238,36 @@ async def main(page: ft.Page):
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # Enviando consulta de usuarios a la API IA
+    #async def enviar_prompt(e):
     async def enviar_prompt(e):
         # Verificamos que la app está configurada con un token de la API
         if not config["api_key"]:
-            # campo_respuesta es un ListView
-            campo_respuesta.controls.append(ft.Text("Error: API Key no configurada."))
-            #page.update()
-            await campo_respuesta.update_async()
+            page.open(ft.SnackBar(ft.Text("Error: API Key no configurada."), bgcolor=ROJO_FUTURO))
+            input_prompt.focus()
+            campo_respuesta.update()
             return
 
         prompt = input_prompt.value.strip()
         if not prompt:
-            campo_respuesta.controls.append(ft.Text("Por favor, escribe una consulta."))
-            await campo_respuesta.update_async()
-            #page.update()
+            page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=ROJO_FUTURO))
+            input_prompt.focus()
+            campo_respuesta.update()
             return
 
         # Agregamos en msj del usuario al Chat.
+        # campo_respuesta.controls.clear() # Se comenta este llamado debido a que es importante tener 
+        # |-> el historial al menos en pantalla. Puede pensarse en otra estratégia para mantener limpia la interfáz
+        # |-> sin tener que desacer el historial.
         input_prompt.value = ""
         input_prompt.focus()
 
         campo_respuesta.controls.append(burbuja_mensaje(prompt, True))
-        await campo_respuesta.update_async()
+        campo_respuesta.update()
+        #await campo_respuesta.update_async() # se deshabilita el uso del await hasta que pueda comprobar que es beneficioso su uso para este contexto.
 
         # conectamos 
         await get_respuesta_ia(page, prompt, campo_respuesta)
+        page.update()
 
 
 
@@ -275,12 +286,20 @@ async def main(page: ft.Page):
             campo_respuesta.controls.append(respuesta_ia_burbuja)
             await campo_respuesta.update_async()
 
+            fecha_de_hoy = get_hoy()
             # Obtenemos la respuesta de la IA en streaming
             respuesta = client.chat.completions.create(
                 model=config["modelo"],
                 messages=[
-                    {"role": "system", "content": "Te llamas DeepSeek, y charlamos a través de DeepRoot un Cliente API para DeepSeek. Eres un asistente y experto programador promotor del software libre."},
-                    {"role": "user", "content": prompt},
+                        {"role": "system", "content": "Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre."},
+                        {"role": "system", "content": f"{fecha_de_hoy}, responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
+                        {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python por Jonás Reyes (jonasroot), un programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app."},
+                        {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
+                        {"role": "system", "content": "Presenta la información de manera clara y bien formateada, usando elementos visuales e íconos de manera moderada para mejorar la comprensión sin saturar."},
+                        {"role": "system", "content": "DeepRoot está en constante desarrollo. Aquellos interesados en colaborar pueden contactar al desarrollador a través de los medios mencionados."},
+                        {"role": "system", "content": "Si el usuario solo te saluda, responde con tu nombre y pregunta cómo puedes ayudarle. Evita presentar información detallada sobre DeepRoot a menos que el usuario lo solicite."},
+                        {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), no estás habilitada para memorizar conversaciones previas. Si el usuario hace referencia a preguntas anteriores, responde de manera inteligente y coherente."},
+                        {"role": "user", "content": prompt},
                 ],
                 temperature=0,
                 stream=True,
@@ -478,30 +497,17 @@ async def main(page: ft.Page):
             try:
                 ahora = datetime.now()
                 fecha_ahora = ahora.strftime("%Y-%m-%d_%H%M%S")
-                nombre_archivo_historial_chat = f"deeproot_{dr_platform}_chat_con_{config['modelo']}_{fecha_ahora}"
-                archivo_historial_chat_md = f"{ruta_chat_a_guardar}{nombre_archivo_historial_chat}.md"
+                archivo_historial_chat_md = f"{ruta_chat_a_guardar}_historial_chat_dr-{dr_platform}_con_{config['modelo']}_{fecha_ahora}.md"
 
                 # Generamos el archivo markdown con el historial del chat
                 with open(archivo_historial_chat_md, "w", encoding="utf-8") as archivo:
                     archivo.write(historial_chat)
                     print("¡Chat guardado exitosamente!")
-                    page.open(ft.SnackBar(ft.Text(f"El historial de tu conversación con la IA {config['modelo']} se descargará en breve."), bgcolor=TEAL_MINCYT))
+                    page.open(ft.SnackBar(ft.Text(f"Historial de Chat con la IA {config['modelo']} se ha guardado exitosamente en '{archivo_historial_chat_md}'."), bgcolor=TEAL_MINCYT))
             except Exception as e:
                 page.open(ft.SnackBar(ft.Text(f"Error guardando el archivo: ",e), bgcolor=ROJO_FUTURO))
             page.update()
 
-
-    # Guardar descarga con filepicker
-    def guardar_chat(e: FilePickerResultEvent):
-        ruta_chat_a_guardar = e.path
-        if ruta_chat_a_guardar:
-            try:
-                with open(ruta_chat_a_guardar, "W", encoding="utf-8") as archivo:
-                    print("¡Chat guardado exitosamente!")
-                    archivo.write("historial_chat.md")
-            except Exception as e:
-                page.open(ft.SnackBar(ft.Text(f"Error guardando el archivo: ",e), bgcolor=ROJO_FUTURO))
-            page.update()
 
     dialogo_guardar_chat = ft.FilePicker(on_result=descargar_chat)
     page.overlay.append(dialogo_guardar_chat)
@@ -511,14 +517,12 @@ async def main(page: ft.Page):
     def compartir_chat_por_email(e):
         texto_markdown = get_chat()
         texto = markdown.markdown(texto_markdown, extensions=['tables'])
-        #texto = get_chat()
 
         ahora = datetime.now()
         fecha_ahora = ahora.strftime("%A %d de %B/%Y | %H:%M:%S Hrs.")
         asunto = f"{fecha_ahora} - Conversación con IA modelo '{config['modelo']}' con DeepRoot Cliente API para {dr_platform}."
 
         if "android" == dr_platform:
-            #url = f"mailto:?body={urllib.parse.quote(texto)}"  # Para correo electrónico
             url_android_ios = f"intent://send/#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.SUBJECT={urllib.parse.quote(asunto)};type=text/plain;S.android.intent.extra.TEXT={urllib.parse.quote(texto)};end;"
             page.launch_url(url_android_ios)  # Esto abrirá el diálogo de compartir en Android
         elif "linux" == dr_platform:
@@ -610,9 +614,9 @@ async def main(page: ft.Page):
             )
 
     btn_compartir_chat = get_icon_boton_prompt(
-            ft.Icons.SHARE,
+            ft.Icons.ALTERNATE_EMAIL,
             AZUL_MINCYT,
-            'Compartir Chat por Email',
+            'Compartir por Email',
             'Compartir',compartir_chat_por_email
             )
 
