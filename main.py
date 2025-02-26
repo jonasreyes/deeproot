@@ -57,8 +57,8 @@ def cargar_configuracion():
     return {
         "usar_enter": False,
         "modelo": "deepseek-chat",
-        "theme_mode": "theme_claro",
-        "code_theme": "claro",
+        "theme_mode": "ft.ThemeMode.LIGHT",
+        "code_theme": "gruvbox-light",
         "code_theme_claro": "gruvbox-light",
         "code_theme_oscuro": "gruvbox-dark",
         "extension_set": "gitHubWeb",
@@ -133,7 +133,7 @@ async def main(page: ft.Page):
     # Componentes de la interfáz
     barra_app = ft.AppBar(
         title=ft.Text(APP_NAME, size=22, color="#FFFFFF", weight=ft.FontWeight.W_900),
-        bgcolor="#1D70B7", # Azul Mincyt
+        bgcolor=AZUL_MINCYT, # Azul Mincyt
         actions=[
             ft.IconButton(ft.Icons.SUNNY if not page.theme_mode == ft.ThemeMode.LIGHT else ft.Icons.LIGHT_MODE,
                           on_click=lambda e: cambiar_theme(),
@@ -179,7 +179,9 @@ async def main(page: ft.Page):
     respuesta_ia_text = ft.Markdown(
         f"\n\n",
         extension_set=EXTENSION_SET,
-        code_theme=CODE_THEME
+        code_theme=CODE_THEME,
+        selectable=True,
+        auto_follow_links=True
     )
 
     # referencia para scroll de respuesta
@@ -190,7 +192,14 @@ async def main(page: ft.Page):
         ref=respuesta_area_ref,
         controls=[
             contenedor_respuesta_prompt_md,
-            respuesta_ia_text
+            respuesta_ia_md := ft.Markdown(
+                f"\n\n",
+                extension_set=EXTENSION_SET,
+                code_theme=CODE_THEME,
+                selectable=True,
+                auto_follow_links=True
+            )
+
         ],
         expand=True,
         spacing=10,
@@ -198,7 +207,7 @@ async def main(page: ft.Page):
     )
 
     # Función Actualizar Markdown
-    def actualizar_markdown(campo, code_theme="gruvbox-light", extension_set="gitHubWeb", selectable=True, auto_follow_links=True):
+    def actualizar_markdown(campo, code_theme=CODE_THEME, extension_set="gitHubWeb", selectable=True, auto_follow_links=True):
         campo.extension_set = extension_set
         campo.code_theme = code_theme
         campo.selectable = selectable
@@ -293,7 +302,7 @@ async def main(page: ft.Page):
                 messages=[
                         {"role": "system", "content": "Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre."},
                         {"role": "system", "content": f"{fecha_de_hoy}, responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
-                        {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python por Jonás Reyes (jonasroot), un programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app."},
+                        {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python por Jonás Reyes (jonasroot), un programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
                         {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
                         {"role": "system", "content": "Presenta la información de manera clara y bien formateada, usando elementos visuales e íconos de manera moderada para mejorar la comprensión sin saturar."},
                         {"role": "system", "content": "DeepRoot está en constante desarrollo. Aquellos interesados en colaborar pueden contactar al desarrollador a través de los medios mencionados."},
@@ -321,14 +330,16 @@ async def main(page: ft.Page):
 
         except asyncio.TimeoutError:
             # En caso de que el servidor no responda en el tiempo especificado
-            campo_respuesta.controls.append(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."))
+            page.open(ft.SnackBar(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."), bgcolor=ROJO_FUTURO))
+            page.update()
         except (APIError, APIConnectionError, OpenAIError) as e:
             # Manejo de errores con la API
-            campo_respuesta.controls.append(ft.Text(f"Error de conexión con la IA: {str(e)}"))
+            page.open(ft.SnackBar(ft.Text(f"Error de conexión con la IA: {str(e)}"), bgcolor=ROJO_FUTURO))
+            page.update()
         except Exception as e:
             # Manejo de cualquier otro error no esperado
-            campo_respuesta.controls.append(ft.Text(f"Error inesperado: {str(e)}"))
-        await campo_respuesta.update_async()
+            page.open(ft.SnackBar(ft.Text(f"Error inesperado: {str(e)}"), bgcolor=ROJO_FUTURO))
+            page.update()
 
 
     # Alternativa para usar enter
@@ -422,7 +433,9 @@ async def main(page: ft.Page):
     acercade = ft.Markdown(
         acerca.de,
         extension_set=EXTENSION_SET,
-        code_theme=CODE_THEME
+        code_theme=CODE_THEME,
+        selectable = True,
+        auto_follow_links = True,
     )
 
     # panel configuración modelos
@@ -448,17 +461,28 @@ async def main(page: ft.Page):
     def cambiar_theme():
         global CODE_THEME, CODE_THEME_CLARO, CODE_THEME_OSCURO
         global EXTENSION_SET
-        if config["theme_mode"] == "theme_oscuro":
-            page.theme_mode = ft.ThemeMode.LIGHT
-            config["theme_mode"] = "theme_claro"
-            CODE_THEME = CODE_THEME_CLARO
-        else:
+        if page.theme_mode == ft.ThemeMode.LIGHT:
             page.theme_mode = ft.ThemeMode.DARK
-            config["theme_mode"] = "theme_oscuro"
+            config["theme_mode"] = "ft.ThemeMode.DARK"
             CODE_THEME = CODE_THEME_OSCURO
+        else:
+            page.theme_mode = ft.ThemeMode.LIGHT
+            config["theme_mode"] = "ft.ThemeMode.LIGHT"
+            CODE_THEME = CODE_THEME_CLARO
 
-        actualizar_markdown(respuesta_ia_text,CODE_THEME)
-        actualizar_markdown(acercade,CODE_THEME, selectable=True)
+        print(f"THEME_MODE: {page.theme_mode}\n CODE_THEME: {CODE_THEME}")
+
+    # Actualizar el code_theme de todos los Markdown en la interfaz
+        for control in campo_respuesta.controls:
+            if isinstance(control, ft.Row):
+                for child in control.controls:
+                    if isinstance(child, ft.Container):
+                        if isinstance(child.content, ft.Markdown):
+                            actualizar_markdown(child.content, CODE_THEME)
+                    elif isinstance(child, ft.Markdown):
+                        actualizar_markdown(child, CODE_THEME)
+
+        actualizar_markdown(acercade)
         guardar_configuracion(config)
         page.update()
 
