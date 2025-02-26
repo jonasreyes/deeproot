@@ -181,11 +181,11 @@ async def main(page: ft.Page):
 
     # referencia para scroll de respuesta
     # refactorizar próximamente
-    respuesta_area_ref = ft.Ref[ft.Column]()
+    campo_respuesta_ref = ft.Ref[ft.ListView]()
 
     # str: Campo de salida de la respuesta de la IA, el estilo y formato se dará desde la fución ectualizar_markdown()
     campo_respuesta = ft.ListView(
-        ref=respuesta_area_ref,
+        ref=campo_respuesta_ref,
         controls=[
             contenedor_respuesta_prompt_md, # próximamente incluir Imágen Logotipo de DeepRoot
         ],
@@ -264,11 +264,10 @@ async def main(page: ft.Page):
         input_prompt.focus()
 
         campo_respuesta.controls.append(burbuja_mensaje(prompt, True))
-        campo_respuesta.update()
-        #await campo_respuesta.update_async() # se deshabilita el uso del await hasta que pueda comprobar que es beneficioso su uso para este contexto.
+        campo_respuesta.update() # se deshabilita el uso del await hasta que pueda comprobar que es beneficioso su uso para este contexto.
 
         # conectamos 
-        await get_respuesta_ia(page, prompt, campo_respuesta)
+        resp = await get_respuesta_ia(page, prompt, campo_respuesta)
         page.update()
 
 
@@ -318,8 +317,8 @@ async def main(page: ft.Page):
                     print(f"Campo: {chunk_texto}")
 
             input_prompt.focus()
-            campo_respuesta.scroll_to(offset=-1, duration=1000)
-            await campo_respuesta.update_async()
+            campo_respuesta.scroll_to(offset=-1, duration=2000)
+            return campo_respuesta
 
         except asyncio.TimeoutError:
             # En caso de que el servidor no responda en el tiempo especificado
@@ -716,7 +715,6 @@ async def main(page: ft.Page):
         controls=[
             campo_respuesta,
         ],
-        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
         expand=True,  # Ocupa el espacio vertical disponible
         alignment=ft.MainAxisAlignment.END,
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
