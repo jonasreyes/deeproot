@@ -118,6 +118,9 @@ async def main(page: ft.Page):
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
     page.auto_scroll = True
 
+    # creamos una referencia a todos los elementos markdown
+    respuesta_ia_md_ref = ft.Ref[ft.Markdown]()
+
     # en futura actualización facilitaré la personalización completa del theme.
     page.theme = ft.Theme(
         color_scheme_seed=ft.Colors.BLUE,
@@ -175,31 +178,16 @@ async def main(page: ft.Page):
         expand=True,
     )
     
-    # Prompt del usuario que será devuelto a la interfáz
-    respuesta_ia_text = ft.Markdown(
-        f"\n\n",
-        extension_set=EXTENSION_SET,
-        code_theme=CODE_THEME,
-        selectable=True,
-        auto_follow_links=True
-    )
 
     # referencia para scroll de respuesta
+    # refactorizar próximamente
     respuesta_area_ref = ft.Ref[ft.Column]()
 
     # str: Campo de salida de la respuesta de la IA, el estilo y formato se dará desde la fución ectualizar_markdown()
     campo_respuesta = ft.ListView(
         ref=respuesta_area_ref,
         controls=[
-            contenedor_respuesta_prompt_md,
-            respuesta_ia_md := ft.Markdown(
-                f"\n\n",
-                extension_set=EXTENSION_SET,
-                code_theme=CODE_THEME,
-                selectable=True,
-                auto_follow_links=True
-            )
-
+            contenedor_respuesta_prompt_md, # próximamente incluir Imágen Logotipo de DeepRoot
         ],
         expand=True,
         spacing=10,
@@ -214,12 +202,17 @@ async def main(page: ft.Page):
         campo.auto_follow_links = auto_follow_links
         campo.update()
 
+    # Actualizar los elementos markdown que tengar referencia
+    def actualizar_markdown_ref(ref,code_theme):
+        ref.current.code_theme = code_theme
+        ref.current.update()
+
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # Función de construcción de la burbuja Chat
-    def burbuja_mensaje(mensaje, es_usuario):
+    def burbuja_mensaje(mensaje, es_usuario, referencia=respuesta_ia_md_ref):
         msj = ft.Row(
             alignment = ft.MainAxisAlignment.START if es_usuario else ft.MainAxisAlignment.SPACE_BETWEEN,
             wrap = True,
@@ -231,7 +224,7 @@ async def main(page: ft.Page):
                         code_theme=CODE_THEME,
                         selectable = True,
                         auto_follow_links = True,
-
+                        ref=respuesta_ia_md_ref, #importante para actualizar el code_theme
                     ),
                     padding = 10 if es_usuario else 5,
                     bgcolor = NARANJA_MINCYT if es_usuario else False,
@@ -470,18 +463,7 @@ async def main(page: ft.Page):
             config["theme_mode"] = "ft.ThemeMode.LIGHT"
             CODE_THEME = CODE_THEME_CLARO
 
-        print(f"THEME_MODE: {page.theme_mode}\n CODE_THEME: {CODE_THEME}")
-
-    # Actualizar el code_theme de todos los Markdown en la interfaz
-        for control in campo_respuesta.controls:
-            if isinstance(control, ft.Row):
-                for child in control.controls:
-                    if isinstance(child, ft.Container):
-                        if isinstance(child.content, ft.Markdown):
-                            actualizar_markdown(child.content, CODE_THEME)
-                    elif isinstance(child, ft.Markdown):
-                        actualizar_markdown(child, CODE_THEME)
-
+        actualizar_markdown_ref(respuesta_ia_md_ref,CODE_THEME)
         actualizar_markdown(acercade)
         guardar_configuracion(config)
         page.update()
