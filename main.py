@@ -429,6 +429,7 @@ async def main(page: ft.Page):
         code_theme=CODE_THEME,
         selectable = True,
         auto_follow_links = True,
+        ref=respuesta_ia_md_ref
     )
 
     # panel configuración modelos
@@ -538,7 +539,7 @@ async def main(page: ft.Page):
         page.update()
 
     # Obtener el chat actual
-    def get_chat():
+    def get_chat(ref=actualizar_markdown_ref):
         conversaciones_text = ""
         # Recorremos los controles en campo_respuesta
         for control in campo_respuesta.controls:
