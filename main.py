@@ -111,12 +111,14 @@ async def main(page: ft.Page):
 
     # Configuración del theme inicial
     dr_platform = get_platform(page, APP_NAME, APP_LEMA)
+    page.theme_mode = ft.ThemeMode.LIGHT
     page.window.width = 512
     page.window.height = 768
     page.padding = 20
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
     page.auto_scroll = True
+    page.locale_configuration = ft.Locale("es", "VE")
 
     # creamos una referencia a todos los elementos markdown
     respuesta_ia_md_ref = ft.Ref[ft.Markdown]()
@@ -138,7 +140,7 @@ async def main(page: ft.Page):
         title=ft.Text(APP_NAME, size=22, color="#FFFFFF", weight=ft.FontWeight.W_900),
         bgcolor=AZUL_MINCYT, # Azul Mincyt
         actions=[
-            ft.IconButton(ft.Icons.SUNNY if not page.theme_mode == ft.ThemeMode.LIGHT else ft.Icons.LIGHT_MODE,
+            ft.IconButton(ft.Icons.BRIGHTNESS_4 if page.theme_mode == ft.ThemeMode.LIGHT else ft.Icons.BRIGHTNESS_7,
                           on_click=lambda e: cambiar_theme(),
                           tooltip="Cambiar Tema"
                           ),
@@ -294,12 +296,14 @@ async def main(page: ft.Page):
                 messages=[
                         {"role": "system", "content": "Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre."},
                         {"role": "system", "content": f"{fecha_de_hoy}, responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
-                        {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python por Jonás Reyes (jonasroot), un programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
+                        {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python y Flet (Framework de Flutter para Python) por Jonás Reyes (jonasroot), programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
                         {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
+                        {"role": "system", "content": "DeepRoot actualmente permite interactuar con tres modelos de deepseek: deepseek-chat, deepseek-coder y deepseek-reasoner. Para trabajar con uno de estos modelos el usuario debe dirigirse a la pestaña 'Configuración API' de DeepRoot seleccionar el modelo de la lista desplegable y pulsar guardar. El ícono de DeepRoot es el de una Ballena, similar a la de DeepSeek, puedes usar un ícono parecido cuando quieras referirte a DeepRoot."},
+                        {"role": "system", "content": "Como desarrollador de DeepRoot creo que los usuario que desee sacar máximo provecho de la aplicación deberían trabajar desde GNU/Linux y en ese sentido recomiendo usar Canaima GNU/Linux la distribución gnu/linux Venezolana disponible para su descarga en https://canaima.softwarelibre.gob.ve/, esta distribución se basa en Debian y es Rolling Release. También me parece sumamente compatible con DeepRoot el uso de la apliación Obsidian, una fenomenal aplicación para tomar notas, registrar ideas y sistematizar información en formato Markdown, justamente el formato de los archivos descagables de DeepRoot y formato de Copiado al Portapapeles de las conversaciones de DeepRoot, aunque no son aplicaciones integradas el uso de ambas puede ser armónico."},
                         {"role": "system", "content": "Presenta la información de manera clara y bien formateada, usando elementos visuales e íconos de manera moderada para mejorar la comprensión sin saturar."},
                         {"role": "system", "content": "DeepRoot está en constante desarrollo. Aquellos interesados en colaborar pueden contactar al desarrollador a través de los medios mencionados."},
                         {"role": "system", "content": "Si el usuario solo te saluda, responde con tu nombre y pregunta cómo puedes ayudarle. Evita presentar información detallada sobre DeepRoot a menos que el usuario lo solicite."},
-                        {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), no estás habilitada para memorizar conversaciones previas. Si el usuario hace referencia a preguntas anteriores, responde de manera inteligente y coherente."},
+                        {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), no estás habilitada para memorizar conversaciones previas. Si el usuario hace referencia a preguntas anteriores, o si el prompt pareciera continuar con una conversación anterior evita saludar de nuevo, responde de manera inteligente y coherente."},
                         {"role": "user", "content": prompt},
                 ],
                 temperature=0,
@@ -317,7 +321,7 @@ async def main(page: ft.Page):
                     print(f"Campo: {chunk_texto}")
 
             input_prompt.focus()
-            campo_respuesta.scroll_to(offset=-1, duration=2000)
+            campo_respuesta.scroll_to(offset=-1, duration=5000)
             return campo_respuesta
 
         except asyncio.TimeoutError:
@@ -352,11 +356,12 @@ async def main(page: ft.Page):
         label="Escribe tu consulta",
         autofocus=True,
         expand=True,
-        min_lines=2,
-        max_lines=4,
+        min_lines=1,
+        max_lines=1,
         border_radius=10,
         multiline=not config["usar_enter"],
-        on_submit=enviar_prompt
+        on_submit=enviar_prompt,
+        bgcolor= lambda e: ft.Colors.GREY_300 if page.theme_mode == ft.ThemeMode.LIGHT else ft.Colors.GREY_500,
     )
 
     # switch para enviar con enter
@@ -696,6 +701,21 @@ async def main(page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
         )
         page.update()
+    elif dr_platform in ["android","ios"]:
+        fila_prompt_botones = ft.Row(
+            [
+                btn_nuevo_chat,
+                btn_copiar_prompt,
+                btn_copiar_resp,
+                btn_compartir_chat,
+                btn_reset_prompt,
+                btn_cerrar
+            ], 
+            spacing=4,
+            scroll=True,
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
+        page.update()
     else:
         fila_prompt_botones = ft.Row(
             [
@@ -733,7 +753,7 @@ async def main(page: ft.Page):
         [
             container_panel_respuesta,
             fila_prompt,
-            fila_prompt_botones
+            fila_prompt_botones,
         ],
         expand=True,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
