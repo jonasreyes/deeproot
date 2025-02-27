@@ -43,7 +43,7 @@ fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
 # hora para la IA
 def get_hoy():
     hoy = datetime.now()
-    fecha_de_hoy = hoy.strftime("(Hoy es %A %d de %B del año %Y y son las %H:%M:%S hora de Caracas Venezuela.)")
+    fecha_de_hoy = hoy.strftime("(Hoy es %A %d de %B del año %Y y son las %I:%M %p hora de Caracas Venezuela.)")
     return fecha_de_hoy
 
 # ARCHIVO DE CONFIGURACIÓN
@@ -179,7 +179,21 @@ async def main(page: ft.Page):
         padding=10,
         expand=True,
     )
-    
+
+    # arreglo para almacenar conversación (chat co ia)
+    fecha_de_hoy = get_hoy()
+    historial_conversacion=[
+            {"role": "system", "content": "Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre."},
+            {"role": "system", "content": f"{fecha_de_hoy}, responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
+            {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python y Flet (Framework de Flutter para Python) por Jonás Reyes (jonasroot), programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
+            {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
+            {"role": "system", "content": "DeepRoot actualmente permite interactuar con tres modelos de deepseek: deepseek-chat, deepseek-coder y deepseek-reasoner. Para trabajar con uno de estos modelos el usuario debe dirigirse a la pestaña 'Configuración API' de DeepRoot seleccionar el modelo de la lista desplegable y pulsar guardar. El ícono de DeepRoot es el de una Ballena, similar a la de DeepSeek, puedes usar un ícono parecido cuando quieras referirte a DeepRoot."},
+            {"role": "system", "content": "Como desarrollador de DeepRoot creo que los usuario que desee sacar máximo provecho de la aplicación deberían trabajar desde GNU/Linux y en ese sentido recomiendo usar Canaima GNU/Linux la distribución gnu/linux Venezolana disponible para su descarga en https://canaima.softwarelibre.gob.ve/, esta distribución se basa en Debian y es Rolling Release. También me parece sumamente compatible con DeepRoot el uso de la apliación Obsidian, una fenomenal aplicación para tomar notas, registrar ideas y sistematizar información en formato Markdown, justamente el formato de los archivos descagables de DeepRoot y formato de Copiado al Portapapeles de las conversaciones de DeepRoot, aunque no son aplicaciones integradas el uso de ambas puede ser armónico."},
+            {"role": "system", "content": "Presenta la información de manera clara y bien formateada, usando elementos visuales e íconos de manera moderada para mejorar la comprensión sin saturar."},
+            {"role": "system", "content": "DeepRoot está en constante desarrollo. Aquellos interesados en colaborar pueden contactar al desarrollador a través de los medios mencionados."},
+            {"role": "system", "content": "Si el usuario solo te saluda, responde con tu nombre y pregunta cómo puedes ayudarle. Evita presentar información detallada sobre DeepRoot a menos que el usuario lo solicite."},
+            {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), he habilitado el registro de un historial de la conversación, mientras DeepRoot no sea cerrada podras tener información de contexto y de las conversaciones con el usuario durante la actual sesión. Esto mejorará pero por lo pronto a esto nos sujetamos. Si el usuario hace referencia a preguntas anteriores, o si el prompt pareciera continuar con una conversación anterior evita saludar de nuevo, responde de manera inteligente y coherente."},
+    ]
 
     # referencia para scroll de respuesta
     # refactorizar próximamente
@@ -284,28 +298,26 @@ async def main(page: ft.Page):
         try:
             client = openai.OpenAI(api_key=config["api_key"], base_url=config["url_base"])
 
+            # obtenemos la fecha y hora actual para dar información de contexto temporal a la IA
+            fecha_de_hoy = get_hoy()
+
+            # mensajes de configuración DeepRoot
+
+            # colectando mensajer para el historial
+            historial_conversacion.append({"role": "user", "content": prompt})
+
+            # Creamos la variable 'respuesta_temporal_para_historial'
+            respuesta_temporal_para_historial = [""]
+
             # Decorando el Prompt
             respuesta_ia_burbuja = burbuja_mensaje("", False)
             campo_respuesta.controls.append(respuesta_ia_burbuja)
             await campo_respuesta.update_async()
 
-            fecha_de_hoy = get_hoy()
             # Obtenemos la respuesta de la IA en streaming
             respuesta = client.chat.completions.create(
                 model=config["modelo"],
-                messages=[
-                        {"role": "system", "content": "Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre."},
-                        {"role": "system", "content": f"{fecha_de_hoy}, responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
-                        {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python y Flet (Framework de Flutter para Python) por Jonás Reyes (jonasroot), programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
-                        {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
-                        {"role": "system", "content": "DeepRoot actualmente permite interactuar con tres modelos de deepseek: deepseek-chat, deepseek-coder y deepseek-reasoner. Para trabajar con uno de estos modelos el usuario debe dirigirse a la pestaña 'Configuración API' de DeepRoot seleccionar el modelo de la lista desplegable y pulsar guardar. El ícono de DeepRoot es el de una Ballena, similar a la de DeepSeek, puedes usar un ícono parecido cuando quieras referirte a DeepRoot."},
-                        {"role": "system", "content": "Como desarrollador de DeepRoot creo que los usuario que desee sacar máximo provecho de la aplicación deberían trabajar desde GNU/Linux y en ese sentido recomiendo usar Canaima GNU/Linux la distribución gnu/linux Venezolana disponible para su descarga en https://canaima.softwarelibre.gob.ve/, esta distribución se basa en Debian y es Rolling Release. También me parece sumamente compatible con DeepRoot el uso de la apliación Obsidian, una fenomenal aplicación para tomar notas, registrar ideas y sistematizar información en formato Markdown, justamente el formato de los archivos descagables de DeepRoot y formato de Copiado al Portapapeles de las conversaciones de DeepRoot, aunque no son aplicaciones integradas el uso de ambas puede ser armónico."},
-                        {"role": "system", "content": "Presenta la información de manera clara y bien formateada, usando elementos visuales e íconos de manera moderada para mejorar la comprensión sin saturar."},
-                        {"role": "system", "content": "DeepRoot está en constante desarrollo. Aquellos interesados en colaborar pueden contactar al desarrollador a través de los medios mencionados."},
-                        {"role": "system", "content": "Si el usuario solo te saluda, responde con tu nombre y pregunta cómo puedes ayudarle. Evita presentar información detallada sobre DeepRoot a menos que el usuario lo solicite."},
-                        {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), no estás habilitada para memorizar conversaciones previas. Si el usuario hace referencia a preguntas anteriores, o si el prompt pareciera continuar con una conversación anterior evita saludar de nuevo, responde de manera inteligente y coherente."},
-                        {"role": "user", "content": prompt},
-                ],
+                messages=historial_conversacion,
                 temperature=0,
                 stream=True,
                 max_tokens=config["max_tokens"]
@@ -316,13 +328,20 @@ async def main(page: ft.Page):
                 if chunk.choices[0].delta.content:
                     chunk_texto = chunk.choices[0].delta.content
                     respuesta_ia_burbuja.controls[0].content.value += chunk_texto
+                    respuesta_temporal_para_historial[0] += chunk_texto
                     await campo_respuesta.update_async()
                     await asyncio.sleep(0)
                     print(f"Campo: {chunk_texto}")
 
             input_prompt.focus()
             campo_respuesta.scroll_to(offset=-1, duration=5000)
-            return campo_respuesta
+
+            # antes del cierre del ciclo, unimos la respuesta de la ia al historial
+            historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
+
+            print(get_hoy())
+            # retornamos respuesta en limpio, que no se usará por ahora, pero que puede servir más adelante.
+            return respuesta_temporal_para_historial[0]
 
         except asyncio.TimeoutError:
             # En caso de que el servidor no responda en el tiempo especificado
@@ -357,7 +376,7 @@ async def main(page: ft.Page):
         autofocus=True,
         expand=True,
         min_lines=1,
-        max_lines=1,
+        max_lines=2,
         border_radius=10,
         multiline=not config["usar_enter"],
         on_submit=enviar_prompt,
