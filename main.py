@@ -3,7 +3,7 @@ Nombre de la aplicación: DEEPROOT
 Versión: 0.0.1
 Autor: Jonás Antonio Reyes Casanova (jonasroot)
 Fecha de creación: 28-01-2025
-Última actualización: 17-02-2025
+Última actualización: 27-02-2025
 
 Descripción:
 Esta aplicación es un cliente de escritorio y móvil para facilitar el acceso y disfrute del Servicio API de DeepSeek. Se requiere de un token de DeepSeek Platform para poder funcionar. Es un desarrollo independiente, inspirado en los valores del Software Libre en Venezuela. Es resultado de los incentivos éticos de la Universidad Bolivariana de Venezuela y la Comunidad de Canaima GNU/Linux.
@@ -183,8 +183,8 @@ async def main(page: ft.Page):
     # arreglo para almacenar conversación (chat co ia)
     fecha_de_hoy = get_hoy()
     historial_conversacion=[
-            {"role": "system", "content": "Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre."},
-            {"role": "system", "content": f"{fecha_de_hoy}, responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
+            {"role": "system", "content": f"{fecha_de_hoy}, Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre. Los mensajes del usuario siempre incorporarán la fecha y hora actualizada al inicio de su mensaje aunque no lo sabrán porque la fecha es insertada en el backend de DeepRoot, esta apliación Cliente API para la IA de DeepSeek. Teniendo la primera fecha y hora que se te dá y la última que pueda aparacer en el inicio del mensaje del usuario, podras estimar cuanto tiempo lleva comunicandose contigo el usuario. La hora y fecha más actualizada siempre será la que venga en el último mensaje del usuario."},
+            {"role": "system", "content": f"Responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
             {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python y Flet (Framework de Flutter para Python) por Jonás Reyes (jonasroot), programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
             {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
             {"role": "system", "content": "DeepRoot actualmente permite interactuar con tres modelos de deepseek: deepseek-chat, deepseek-coder y deepseek-reasoner. Para trabajar con uno de estos modelos el usuario debe dirigirse a la pestaña 'Configuración API' de DeepRoot seleccionar el modelo de la lista desplegable y pulsar guardar. El ícono de DeepRoot es el de una Ballena, similar a la de DeepSeek, puedes usar un ícono parecido cuando quieras referirte a DeepRoot."},
@@ -194,6 +194,10 @@ async def main(page: ft.Page):
             {"role": "system", "content": "Si el usuario solo te saluda, responde con tu nombre y pregunta cómo puedes ayudarle. Evita presentar información detallada sobre DeepRoot a menos que el usuario lo solicite."},
             {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), he habilitado el registro de un historial de la conversación, mientras DeepRoot no sea cerrada podras tener información de contexto y de las conversaciones con el usuario durante la actual sesión. Esto mejorará pero por lo pronto a esto nos sujetamos. Si el usuario hace referencia a preguntas anteriores, o si el prompt pareciera continuar con una conversación anterior evita saludar de nuevo, responde de manera inteligente y coherente."},
     ]
+
+    # indicador de carga y su referencia (para facilitar acceso a el en estructudas de datos muy anidadas), para indicar que se está en espera de respuesta.
+    indicador_carga_ref = ft.Ref[ft.ProgressRing]()
+    indicador_carga = ft.ProgressRing(visible=False)
 
     # referencia para scroll de respuesta
     # refactorizar próximamente
@@ -228,62 +232,82 @@ async def main(page: ft.Page):
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # Función de construcción de la burbuja Chat
-    def burbuja_mensaje(mensaje, es_usuario, referencia=respuesta_ia_md_ref):
-        msj = ft.Row(
-            alignment = ft.MainAxisAlignment.START if es_usuario else ft.MainAxisAlignment.SPACE_BETWEEN,
-            wrap = True,
-            controls = [
-                ft.Container(
-                    content = ft.Markdown(
-                        value = mensaje, 
-                        extension_set=EXTENSION_SET, 
-                        code_theme=CODE_THEME,
-                        selectable = True,
-                        auto_follow_links = True,
-                        ref=respuesta_ia_md_ref, #importante para actualizar el code_theme
-                    ),
-                    padding = 10 if es_usuario else 5,
-                    bgcolor = NARANJA_MINCYT if es_usuario else False,
-                    border_radius = 10,
-                )
-            ]
+    def burbuja_mensaje(mensaje, es_usuario, mostrar_indicador_de_carga=False, referencia=respuesta_ia_md_ref):
+        # Creamos el contenido principal (mensaje)
+        contenido = ft.Markdown(
+            value = mensaje, 
+            extension_set=EXTENSION_SET, 
+            code_theme=CODE_THEME,
+            selectable = True,
+            auto_follow_links = True,
+            ref=referencia, #importante para actualizar el code_theme
         )
-        return msj
 
+        # Contenedor principal del mensaje
+        contenedor_mensaje = ft.Container(
+            content=contenido,
+            padding=10 if es_usuario else 5,
+            bgcolor=NARANJA_MINCYT if es_usuario else None,
+            border_radius=10,
+        )
+
+        # capa final (Row)
+        fila = ft.Row(
+            alignment=ft.MainAxisAlignment.START if es_usuario else ft.MainAxisAlignment.SPACE_BETWEEN,
+            wrap=True,
+            controls =[
+                contenedor_mensaje,
+            ],
+        )
+
+        if mostrar_indicador_de_carga:
+            indicador_carga = ft.ProgressRing(
+                visible = True,
+                width=20,
+                height=20,
+                ref=indicador_carga_ref
+            )
+            fila.controls.append(indicador_carga)
+        return fila
 
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # Enviando consulta de usuarios a la API IA
-    #async def enviar_prompt(e):
     async def enviar_prompt(e):
         # Verificamos que la app está configurada con un token de la API
         if not config["api_key"]:
             page.open(ft.SnackBar(ft.Text("Error: API Key no configurada."), bgcolor=ROJO_FUTURO))
             input_prompt.focus()
-            campo_respuesta.update()
+            page.update()
             return
 
         prompt = input_prompt.value.strip()
         if not prompt:
             page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=ROJO_FUTURO))
             input_prompt.focus()
-            campo_respuesta.update()
+            page.update()
             return
 
         # Agregamos en msj del usuario al Chat.
         # campo_respuesta.controls.clear() # Se comenta este llamado debido a que es importante tener 
         # |-> el historial al menos en pantalla. Puede pensarse en otra estratégia para mantener limpia la interfáz
         # |-> sin tener que desacer el historial.
+        respuesta_temprana=burbuja_mensaje(prompt,es_usuario=True,mostrar_indicador_de_carga=True)
+        campo_respuesta.controls.append(respuesta_temprana)
+        campo_respuesta.update() # para forzar la respuesta inmediata usamos este método que es síncrono.
+
+        # pequeña pausa para dar tiempo a la UI de recargar el control.
+        await asyncio.sleep(0)
+
         input_prompt.value = ""
         input_prompt.focus()
-
-        campo_respuesta.controls.append(burbuja_mensaje(prompt, True))
-        campo_respuesta.update() # se deshabilita el uso del await hasta que pueda comprobar que es beneficioso su uso para este contexto.
+        page.update()
 
         # conectamos 
         resp = await get_respuesta_ia(page, prompt, campo_respuesta)
+        indicador_carga.visible=False
         page.update()
 
 
@@ -299,12 +323,11 @@ async def main(page: ft.Page):
             client = openai.OpenAI(api_key=config["api_key"], base_url=config["url_base"])
 
             # obtenemos la fecha y hora actual para dar información de contexto temporal a la IA
-            fecha_de_hoy = get_hoy()
+            fecha_mas_reciente = get_hoy()
 
             # mensajes de configuración DeepRoot
-
             # colectando mensajer para el historial
-            historial_conversacion.append({"role": "user", "content": prompt})
+            historial_conversacion.append({"role": "user", "content": f"{fecha_mas_reciente}, {prompt}"})
 
             # Creamos la variable 'respuesta_temporal_para_historial'
             respuesta_temporal_para_historial = [""]
@@ -312,7 +335,9 @@ async def main(page: ft.Page):
             # Decorando el Prompt
             respuesta_ia_burbuja = burbuja_mensaje("", False)
             campo_respuesta.controls.append(respuesta_ia_burbuja)
-            await campo_respuesta.update_async()
+            campo_respuesta.update()
+            # pequeña pausa para acutaliaar UI antes de esperar a la API
+            await asyncio.sleep(0)
 
             # Obtenemos la respuesta de la IA en streaming
             respuesta = client.chat.completions.create(
@@ -329,12 +354,14 @@ async def main(page: ft.Page):
                     chunk_texto = chunk.choices[0].delta.content
                     respuesta_ia_burbuja.controls[0].content.value += chunk_texto
                     respuesta_temporal_para_historial[0] += chunk_texto
-                    await campo_respuesta.update_async()
+                    # formzamos la actualización y desplazamiento en cada chunk recibido
+                    page.update()
+                    campo_respuesta.scroll_to(offset=-1, duration=100)
                     await asyncio.sleep(0)
                     print(f"Campo: {chunk_texto}")
 
             input_prompt.focus()
-            campo_respuesta.scroll_to(offset=-1, duration=5000)
+            indicador_carga_ref.current.visible = False
 
             # antes del cierre del ciclo, unimos la respuesta de la ia al historial
             historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
