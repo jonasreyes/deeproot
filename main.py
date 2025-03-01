@@ -41,9 +41,12 @@ hoy = datetime.now()
 fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
 
 # hora para la IA
-def get_hoy():
+def get_hoy(para_ia=True):
     hoy = datetime.now()
-    fecha_de_hoy = hoy.strftime("(Hoy es %A %d de %B del año %Y y son las %I:%M %p hora de Caracas Venezuela.)")
+    if para_ia:
+        fecha_de_hoy = hoy.strftime("(Fecha Actual Incorporada en el Historial de la IA al inicio de la conversación con el usuario: %A %d de %B del año %Y. Hora Actual: %I:%M%p. Horario en base a la locación: Caracas, Venezuela.)")
+    else:
+        fecha_de_hoy = hoy.strftime("(Fecha Actual Concatenada al inicio de cada prompt del usuario: %A %d de %B del año %Y. Hora Actual: %I:%M%p. Horario en base a la locación: Caracas, Venezuela.)")
     return fecha_de_hoy
 
 # ARCHIVO DE CONFIGURACIÓN
@@ -78,7 +81,6 @@ config = cargar_configuracion()
 
 # Interfáz gráfica con Flet
 # Configuración de la API de DeepSeek
-locale.setlocale(locale.LC_TIME, 'es_VE.UTF-8')
 APP_NAME = "DeepRoot"
 APP_VERSION = "Alfa 0.0.1 - 2025"
 APP_LEMA = "Cliente DeepSeek API"
@@ -111,16 +113,38 @@ async def main(page: ft.Page):
 
     # Configuración del theme inicial
     dr_platform = get_platform(page, APP_NAME, APP_LEMA)
+    locale.setlocale(locale.LC_TIME, 'es_VE.UTF-8') if dr_platform != "macos" else None #Deshabilitamos la localización profunda si el se deeproot se ejecuta desde MacOS ya que este sistema da problemas con locale.
     page.theme_mode = ft.ThemeMode.LIGHT
     page.window.width = 512
     page.window.height = 768
     page.padding = 20
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
-    page.auto_scroll = True
     page.locale_configuration = ft.Locale("es", "VE")
+    page.auto_scroll=True
 
-    # creamos una referencia a todos los elementos markdown
+    # Gestión del Scroll - dándole usabilidad
+    usuario_scrolled = False # para detectar si el usuario desplazó manualmente
+
+    def toggle_usuario_scrolled(e: ft.OnScrollEvent):
+        nonlocal usuario_scrolled
+        usuario_scrolled = not usuario_scrolled
+        page.update()
+
+    def on_scroll(e: ft.OnScrollEvent):
+        nonlocal usuario_scrolled
+        nonlocal campo_respuesta
+        if e.pixels >= e.max_scroll_extent: # si aplica entonces el usuario ha hecho scroll manualmente.
+            usuario_scrolled = False
+            campo_respuesta.auto_scroll = True
+            page.update()
+        else:
+            usuario_scrolled = True # Si está en el fondo o final, reactivamos el utoutoauto-scroll.
+            campo_respuesta.auto_scroll = False
+            page.update()
+
+
+    # creamos una referencia a todos los elementos markdown.
     respuesta_ia_md_ref = ft.Ref[ft.Markdown]()
 
     # en futura actualización facilitaré la personalización completa del theme.
@@ -184,7 +208,7 @@ async def main(page: ft.Page):
     fecha_de_hoy = get_hoy()
     historial_conversacion=[
             {"role": "system", "content": f"{fecha_de_hoy}, Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre. Los mensajes del usuario siempre incorporarán la fecha y hora actualizada al inicio de su mensaje aunque no lo sabrán porque la fecha es insertada en el backend de DeepRoot, esta apliación Cliente API para la IA de DeepSeek. Teniendo la primera fecha y hora que se te dá y la última que pueda aparacer en el inicio del mensaje del usuario, podras estimar cuanto tiempo lleva comunicandose contigo el usuario. La hora y fecha más actualizada siempre será la que venga en el último mensaje del usuario."},
-            {"role": "system", "content": f"Responde con la fecha u hora en formato de 12 horas (con opción de 24 horas) basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
+            {"role": "system", "content": f"Responde con la fecha u hora basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
             {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python y Flet (Framework de Flutter para Python) por Jonás Reyes (jonasroot), programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
             {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
             {"role": "system", "content": "DeepRoot actualmente permite interactuar con tres modelos de deepseek: deepseek-chat, deepseek-coder y deepseek-reasoner. Para trabajar con uno de estos modelos el usuario debe dirigirse a la pestaña 'Configuración API' de DeepRoot seleccionar el modelo de la lista desplegable y pulsar guardar. El ícono de DeepRoot es el de una Ballena, similar a la de DeepSeek, puedes usar un ícono parecido cuando quieras referirte a DeepRoot."},
@@ -211,7 +235,8 @@ async def main(page: ft.Page):
         ],
         expand=True,
         spacing=10,
-        auto_scroll=True
+        auto_scroll=True,
+        on_scroll=on_scroll,
     )
 
     # Función Actualizar Markdown
@@ -253,7 +278,7 @@ async def main(page: ft.Page):
 
         # capa final (Row)
         fila = ft.Row(
-            alignment=ft.MainAxisAlignment.START if es_usuario else ft.MainAxisAlignment.SPACE_BETWEEN,
+            alignment=ft.MainAxisAlignment.END if es_usuario else ft.MainAxisAlignment.SPACE_BETWEEN,
             wrap=True,
             controls =[
                 contenedor_mensaje,
@@ -267,7 +292,7 @@ async def main(page: ft.Page):
                 height=20,
                 ref=indicador_carga_ref
             )
-            fila.controls.append(indicador_carga)
+            fila.controls.insert(0,indicador_carga)
         return fila
 
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -296,14 +321,19 @@ async def main(page: ft.Page):
         # |-> sin tener que desacer el historial.
         respuesta_temprana=burbuja_mensaje(prompt,es_usuario=True,mostrar_indicador_de_carga=True)
         campo_respuesta.controls.append(respuesta_temprana)
-        campo_respuesta.update() # para forzar la respuesta inmediata usamos este método que es síncrono.
+        input_prompt.value = ""
 
+        # gestión usable del Scroll
+        #if not usuario_scrolled:
+        campo_respuesta.scroll_to(offset=-1)
+        campo_respuesta.update() # para forzar la respuesta inmediata usamos este método que es síncrono.
+        input_prompt.update()
         # pequeña pausa para dar tiempo a la UI de recargar el control.
         await asyncio.sleep(0)
 
-        input_prompt.value = ""
-        input_prompt.focus()
-        page.update()
+        # evitar que el input_prompt vuelva a tener foco automatico en huespedes móviles, ya que activa el teclado en pantalla y es molesto.
+        # en un dipositivo móvil el foco siempre está al alcance de los dedos, por eso el autofoco solo debe ser para huespedes de escritorio.
+        input_prompt.focus() if dr_platform in ["macos","windows", "linux"] else None
 
         # conectamos 
         resp = await get_respuesta_ia(page, prompt, campo_respuesta)
@@ -323,7 +353,7 @@ async def main(page: ft.Page):
             client = openai.OpenAI(api_key=config["api_key"], base_url=config["url_base"])
 
             # obtenemos la fecha y hora actual para dar información de contexto temporal a la IA
-            fecha_mas_reciente = get_hoy()
+            fecha_mas_reciente = get_hoy(para_ia=False)
 
             # mensajes de configuración DeepRoot
             # colectando mensajer para el historial
@@ -356,17 +386,19 @@ async def main(page: ft.Page):
                     respuesta_temporal_para_historial[0] += chunk_texto
                     # formzamos la actualización y desplazamiento en cada chunk recibido
                     page.update()
-                    campo_respuesta.scroll_to(offset=-1, duration=100)
+                    #if not usuario_scrolled:
+                    campo_respuesta.scroll_to(offset=-1)
                     await asyncio.sleep(0)
                     print(f"Campo: {chunk_texto}")
 
-            input_prompt.focus()
+            input_prompt.focus() if dr_platform in ["macos","windows", "linux"] else None
             indicador_carga_ref.current.visible = False
 
             # antes del cierre del ciclo, unimos la respuesta de la ia al historial
             historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
 
-            print(get_hoy())
+            print(f"Fecha Mas Reciente: {fecha_mas_reciente} \nFecha de Inicio Historial: {fecha_de_hoy}")
+            print(f"Plataforma actual: {dr_platform}")
             # retornamos respuesta en limpio, que no se usará por ahora, pero que puede servir más adelante.
             return respuesta_temporal_para_historial[0]
 
@@ -400,12 +432,13 @@ async def main(page: ft.Page):
     #: str: Campo de ingreso de consulta o prompt
     input_prompt = ft.TextField(
         label="Escribe tu consulta",
-        autofocus=True,
-        expand=True,
+        autofocus=True if dr_platform in ["macos","windows", "linux"] else None # No olvidar que la coma la colocaremos al inicio de la siguiente línea.
+        ,expand=True,
         min_lines=1,
         max_lines=2,
         border_radius=10,
         multiline=not config["usar_enter"],
+        shift_enter=True,
         on_submit=enviar_prompt,
         bgcolor= lambda e: ft.Colors.GREY_300 if page.theme_mode == ft.ThemeMode.LIGHT else ft.Colors.GREY_500,
     )
@@ -671,8 +704,8 @@ async def main(page: ft.Page):
             )
 
     btn_compartir_chat = get_icon_boton_prompt(
-            ft.Icons.ALTERNATE_EMAIL,
-            AZUL_MINCYT,
+            ft.Icons.SHARE if dr_platform != "linux" else ft.Icons.ALTERNATE_EMAIL # para que esta instrucción sea válida la coma se coloca al inicio de la linea inferior #Hack @jonasroot ;-)
+            ,AZUL_MINCYT,
             'Compartir por Email',
             'Compartir',compartir_chat_por_email
             )
@@ -687,7 +720,7 @@ async def main(page: ft.Page):
     btn_copiar_resp = get_icon_boton_prompt(
             ft.Icons.OFFLINE_SHARE_ROUNDED,
             AZUL_MINCYT,
-            'Copiar Respuesta IA',
+            'Copiar Respuesta',
             'Respuesta',copiar_respuesta
             )
 
@@ -731,7 +764,8 @@ async def main(page: ft.Page):
         content=campos_prompt
     )
 
-    if dr_platform in ["windows","linux","macos"]:
+    #if dr_platform in ["windows","linux","macos"]:
+    if dr_platform in ["linux"]:
         fila_prompt_botones = ft.Row(
             [
                 btn_nuevo_chat,
@@ -747,7 +781,7 @@ async def main(page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
         )
         page.update()
-    elif dr_platform in ["android","ios"]:
+    elif dr_platform in ["windows", "macos"]: # para estos sistemas el botón "Salír" funciona. en Macos y el Windows no funciona descargar porque para linux se apoya en Zenity. Más adelantes se buscarán alternativas.
         fila_prompt_botones = ft.Row(
             [
                 btn_nuevo_chat,
@@ -768,8 +802,8 @@ async def main(page: ft.Page):
                 btn_nuevo_chat,
                 btn_copiar_prompt,
                 btn_copiar_resp,
+                btn_compartir_chat,
                 btn_reset_prompt,
-                btn_cerrar
             ], 
             spacing=4,
             scroll=True,
