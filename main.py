@@ -124,25 +124,43 @@ async def main(page: ft.Page):
     page.auto_scroll=True
 
     # Gestión del Scroll - dándole usabilidad
-    usuario_scrolled = False # para detectar si el usuario desplazó manualmente
-
-    def toggle_usuario_scrolled(e: ft.OnScrollEvent):
-        nonlocal usuario_scrolled
-        usuario_scrolled = not usuario_scrolled
-        page.update()
 
     def on_scroll(e: ft.OnScrollEvent):
-        nonlocal usuario_scrolled
-        nonlocal campo_respuesta
-        if e.pixels >= e.max_scroll_extent: # si aplica entonces el usuario ha hecho scroll manualmente.
-            usuario_scrolled = False
-            campo_respuesta.auto_scroll = True
-            page.update()
-        else:
-            usuario_scrolled = True # Si está en el fondo o final, reactivamos el utoutoauto-scroll.
-            campo_respuesta.auto_scroll = False
-            page.update()
+        scroll_usuario = e.event_type
 
+        # Si el usuario hace scroll procedemos a revisar la dirección del mismo
+        # el criterio establecido aqu√≠ prioriza el uso de deeproot en escritorio
+        # sin embargo en dispositivos móviles tanto ANDROID como IOS, la interacción
+        # o scroll se hace tocando la pantalla, en esas plataformas el sendito de dirección
+        # se invierte, entonces, en esos dispositivos cuando e.direction es == a "forward"
+        # el usuario desea ver hacia abajo, y si direction == "reverse" el usuario desea ir
+        # hacia arriba, quienes hagan mantenimiento a esta app deberían recordar usar
+        # ft.Platform para identificar la plataforma desde donde el usuario corre la app
+        # y de acuerdo a la misma settear aquí los eventos correctamente.
+        if scroll_usuario == "user":
+            # la dirección solo tendrá valor si hay un scroll del usuario,
+            # por tanto solo debemos crear esta variable si antes hay acción del mismo
+            direccion_scroll = e.direction
+
+            if direccion_scroll == "forward":
+                # para cumplir el deseo del usuario, detenemos el scroll automático.
+                # vale la pena señalar que para que se detenga el scroll no basta 
+                # con setear en False el atributo 'auto_scroll' en ft.Page ni en 
+                # el Control (en nuestro caso campo_respuesta (ft.ListView)), sinó
+                # que ademas debe llevarse offset(de scroll_to) a 0 
+                # (campo_respuesta.scroll_to(offset=0, duration=100))
+                if dr_platform == "ios" or dr_platform == "android":
+                    campo_respuesta.auto_scroll=True 
+                else:
+                    campo_respuesta.auto_scroll=False
+            elif direccion_scroll == "reverse" and campo_respuesta.auto_scroll == False:
+                print(f"El usuario desea leer hacia abajo: direction={e.direction}")
+                # si el usuario mueve scroll hacia abajo y ya estaba en off, el scroll
+                # procederemos a reactivar el scroll automático. 
+                if dr_platform == "ios" or dr_platform == "android":
+                    campo_respuesta.auto_scroll=False
+                else:
+                    campo_respuesta.auto_scroll=True
 
     # creamos una referencia a todos los elementos markdown.
     respuesta_ia_md_ref = ft.Ref[ft.Markdown]()
@@ -324,8 +342,7 @@ async def main(page: ft.Page):
         input_prompt.value = ""
 
         # gestión usable del Scroll
-        #if not usuario_scrolled:
-        campo_respuesta.scroll_to(offset=-1)
+        campo_respuesta.scroll_to(offset=0, duration=50)
         campo_respuesta.update() # para forzar la respuesta inmediata usamos este método que es síncrono.
         input_prompt.update()
         # pequeña pausa para dar tiempo a la UI de recargar el control.
@@ -386,8 +403,7 @@ async def main(page: ft.Page):
                     respuesta_temporal_para_historial[0] += chunk_texto
                     # formzamos la actualización y desplazamiento en cada chunk recibido
                     page.update()
-                    #if not usuario_scrolled:
-                    campo_respuesta.scroll_to(offset=-1)
+                    campo_respuesta.scroll_to(offset=0, duration=50)
                     await asyncio.sleep(0)
                     print(f"Campo: {chunk_texto}")
 
