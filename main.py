@@ -1,6 +1,6 @@
 """
 Nombre de la aplicación: DEEPROOT
-Versión: 0.0.1
+Versión: 0.1.1
 Autor: Jonás Antonio Reyes Casanova (jonasroot)
 Fecha de creación: 28-01-2025
 Última actualización: 27-02-2025
@@ -35,10 +35,14 @@ from datetime import datetime
 import urllib.parse
 from flet import FilePicker, FilePickerResultEvent
 import markdown
+from modules import themes as tm
+from modules.interfaz import GestorConversacion
 
 # contexto de tiempo
 hoy = datetime.now()
 fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
+
+gc = GestorConversacion()
 
 # hora para la IA
 def get_hoy(para_ia=True):
@@ -94,21 +98,6 @@ CODE_THEME_CLARO = config["code_theme_claro"]
 CODE_THEME_OSCURO = config["code_theme_oscuro"]
 CODE_THEME = CODE_THEME_CLARO
 
-# Colores personalizados
-VERDE_MINCYT = "#026E71"
-TEAL_MINCYT = "#02A7AB"
-AZUL_MINCYT = "#1D70B7"
-GRIS_MINCYT = "#9C9B9B"
-NARANJA_MINCYT = "#F08427"
-ROJO_FUTURO = "#E63022"
-NARANJA_FUTURO = "#EC6C3A"
-BEIGE_FUTURO = "#F8EFDC"
-AZUL_FUTURO = "#1440AD"
-AZUL_CIELO_FUTURO = "#A6D8E2"
-DORADO_FUTURO = "#EFC318"
-NEGRO_FUTURO = "#1F1E1E"
-
-
 async def main(page: ft.Page):
 
     # Configuración del theme inicial
@@ -163,6 +152,9 @@ async def main(page: ft.Page):
                     campo_respuesta.auto_scroll=True
 
     # creamos una referencia a todos los elementos markdown.
+    burbuja_container_ref = ft.Ref[ft.Container]()
+
+    # creamos una referencia a todos los elementos markdown.
     respuesta_ia_md_ref = ft.Ref[ft.Markdown]()
 
     # en futura actualización facilitaré la personalización completa del theme.
@@ -170,7 +162,7 @@ async def main(page: ft.Page):
         color_scheme_seed=ft.Colors.BLUE,
         visual_density = ft.VisualDensity.COMFORTABLE,
         color_scheme=ft.ColorScheme(
-            primary = AZUL_MINCYT,
+            primary = tm.Color.AzulMincyt,
             secondary = ft.Colors.ORANGE,
             background = ft.Colors.GREY_900,
             surface = ft.Colors.GREY_800
@@ -180,7 +172,7 @@ async def main(page: ft.Page):
     # Componentes de la interfáz
     barra_app = ft.AppBar(
         title=ft.Text(APP_NAME, size=22, color="#FFFFFF", weight=ft.FontWeight.W_900),
-        bgcolor=AZUL_MINCYT, # Azul Mincyt
+        bgcolor=tm.Color.AzulMincyt, # Azul Mincyt
         actions=[
             ft.IconButton(ft.Icons.BRIGHTNESS_4 if page.theme_mode == ft.ThemeMode.LIGHT else ft.Icons.BRIGHTNESS_7,
                           on_click=lambda e: cambiar_theme(),
@@ -191,7 +183,7 @@ async def main(page: ft.Page):
     page.appbar = barra_app
 
     barra_pie = ft.BottomAppBar(
-        bgcolor=ft.Colors.BLUE,
+        bgcolor=tm.Color.AzulMincyt,
         shape=ft.NotchShape.CIRCULAR,
         content=ft.Row(
             controls=[
@@ -216,7 +208,7 @@ async def main(page: ft.Page):
 
     contenedor_respuesta_prompt_md = ft.Container(
         content=respuesta_prompt_md,
-        bgcolor=AZUL_MINCYT,
+        bgcolor=tm.Color.AzulMincyt,
         border_radius=10,
         padding=10,
         expand=True,
@@ -236,10 +228,6 @@ async def main(page: ft.Page):
             {"role": "system", "content": "Si el usuario solo te saluda, responde con tu nombre y pregunta cómo puedes ayudarle. Evita presentar información detallada sobre DeepRoot a menos que el usuario lo solicite."},
             {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), he habilitado el registro de un historial de la conversación, mientras DeepRoot no sea cerrada podras tener información de contexto y de las conversaciones con el usuario durante la actual sesión. Esto mejorará pero por lo pronto a esto nos sujetamos. Si el usuario hace referencia a preguntas anteriores, o si el prompt pareciera continuar con una conversación anterior evita saludar de nuevo, responde de manera inteligente y coherente."},
     ]
-
-    # indicador de carga y su referencia (para facilitar acceso a el en estructudas de datos muy anidadas), para indicar que se está en espera de respuesta.
-    indicador_carga_ref = ft.Ref[ft.ProgressRing]()
-    indicador_carga = ft.ProgressRing(visible=False)
 
     # referencia para scroll de respuesta
     # refactorizar próximamente
@@ -271,47 +259,12 @@ async def main(page: ft.Page):
         ref.current.update()
 
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
-    # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
-    # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
-    # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # Función de construcción de la burbuja Chat
-    def burbuja_mensaje(mensaje, es_usuario, mostrar_indicador_de_carga=False, referencia=respuesta_ia_md_ref):
-        # Creamos el contenido principal (mensaje)
-        contenido = ft.Markdown(
-            value = mensaje, 
-            extension_set=EXTENSION_SET, 
-            code_theme=CODE_THEME,
-            selectable = True,
-            auto_follow_links = True,
-            ref=referencia, #importante para actualizar el code_theme
-        )
+    def burbuja_mensaje(mensaje, es_usuario, referencia=respuesta_ia_md_ref):
+        theme_mode = "light" if page.theme_mode == ft.ThemeMode.LIGHT else "dark"
+        return gc.crear_burbuja(mensaje, es_usuario, theme_mode, referencia)
+        
 
-        # Contenedor principal del mensaje
-        contenedor_mensaje = ft.Container(
-            content=contenido,
-            padding=10 if es_usuario else 5,
-            bgcolor=NARANJA_MINCYT if es_usuario else None,
-            border_radius=10,
-        )
-
-        # capa final (Row)
-        fila = ft.Row(
-            alignment=ft.MainAxisAlignment.END if es_usuario else ft.MainAxisAlignment.SPACE_BETWEEN,
-            wrap=True,
-            controls =[
-                contenedor_mensaje,
-            ],
-        )
-
-        if mostrar_indicador_de_carga:
-            indicador_carga = ft.ProgressRing(
-                visible = True,
-                width=20,
-                height=20,
-                ref=indicador_carga_ref
-            )
-            fila.controls.insert(0,indicador_carga)
-        return fila
 
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -321,14 +274,14 @@ async def main(page: ft.Page):
     async def enviar_prompt(e):
         # Verificamos que la app está configurada con un token de la API
         if not config["api_key"]:
-            page.open(ft.SnackBar(ft.Text("Error: API Key no configurada."), bgcolor=ROJO_FUTURO))
+            page.open(ft.SnackBar(ft.Text("Error: API Key no configurada."), bgcolor=tm.Color.RojoFuturo))
             input_prompt.focus()
             page.update()
             return
 
         prompt = input_prompt.value.strip()
         if not prompt:
-            page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=ROJO_FUTURO))
+            page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=tm.Color.RojoFuturo))
             input_prompt.focus()
             page.update()
             return
@@ -337,7 +290,7 @@ async def main(page: ft.Page):
         # campo_respuesta.controls.clear() # Se comenta este llamado debido a que es importante tener 
         # |-> el historial al menos en pantalla. Puede pensarse en otra estratégia para mantener limpia la interfáz
         # |-> sin tener que desacer el historial.
-        respuesta_temprana=burbuja_mensaje(prompt,es_usuario=True,mostrar_indicador_de_carga=True)
+        respuesta_temprana=burbuja_mensaje(prompt,es_usuario=True)
         campo_respuesta.controls.append(respuesta_temprana)
         input_prompt.value = ""
 
@@ -354,7 +307,6 @@ async def main(page: ft.Page):
 
         # conectamos 
         resp = await get_respuesta_ia(page, prompt, campo_respuesta)
-        indicador_carga.visible=False
         page.update()
 
 
@@ -373,19 +325,38 @@ async def main(page: ft.Page):
             fecha_mas_reciente = get_hoy(para_ia=False)
 
             # mensajes de configuración DeepRoot
-            # colectando mensajer para el historial
             historial_conversacion.append({"role": "user", "content": f"{fecha_mas_reciente}, {prompt}"})
 
             # Creamos la variable 'respuesta_temporal_para_historial'
             respuesta_temporal_para_historial = [""]
 
-            # Decorando el Prompt
-            respuesta_ia_burbuja = burbuja_mensaje("", False)
-            campo_respuesta.controls.append(respuesta_ia_burbuja)
-            campo_respuesta.update()
-            # pequeña pausa para acutaliaar UI antes de esperar a la API
-            await asyncio.sleep(0)
+            # Avatar y Barra de Progreso temporales
+            indicador_de_carga = ft.Row(
+                [
+                ft.CircleAvatar(
+                        content=Icon(ft.Icons.MEMORY),
+                        bgcolor=Color.GrisMincyt
+                    ),
+                ft.ProgressBar(width=page.width*0.8)
+                ],
+                width=page.width*0.9,
+                alignment=ft.MainAxisAlignment.START)
 
+            # Añadimos el avatar y la barra de progreso al campo_respuesta
+            campo_respuesta.controls.append(indicador_de_carga)
+            campo_respuesta.update() # actualizamos la interfáz para que sea el indicador_de_carga
+            await asyncio.sleep(0) # damos tiempo pequeño para que pueda actualizarse la interfáz.
+
+            # preparamos la burbuja de mensaje vacía para luego añadir la respuesta de la IA.
+            respuesta_ia_burbuja = burbuja_mensaje("", es_usuario=False)
+            campo_respuesta.controls.remove(indicador_de_carga) # eliminamos el indicador_de_carga temporal, de manera inperceptible para el usuario
+
+            # Añadimos a campo_respuesta la burbuja para la respuesta de la IA, se cargará asícronamente.
+            campo_respuesta.controls.append(respuesta_ia_burbuja)
+            campo_respuesta.update() # actualizamos campo_respuesta para que se refleje respuesta_ia_burbuja
+            await asyncio.sleep(0) # pequeña pausa para acutaliaar UI antes de esperar a la API
+
+            # Establecemos un tiempo máximo de espera para la respuesta de la API
             # Obtenemos la respuesta de la IA en streaming
             respuesta = client.chat.completions.create(
                 model=config["modelo"],
@@ -399,7 +370,7 @@ async def main(page: ft.Page):
             for chunk in respuesta:
                 if chunk.choices[0].delta.content:
                     chunk_texto = chunk.choices[0].delta.content
-                    respuesta_ia_burbuja.controls[0].content.value += chunk_texto
+                    respuesta_ia_burbuja.controls[1].content.value += chunk_texto
                     respuesta_temporal_para_historial[0] += chunk_texto
                     # formzamos la actualización y desplazamiento en cada chunk recibido
                     page.update()
@@ -408,7 +379,6 @@ async def main(page: ft.Page):
                     print(f"Campo: {chunk_texto}")
 
             input_prompt.focus() if dr_platform in ["macos","windows", "linux"] else None
-            indicador_carga_ref.current.visible = False
 
             # antes del cierre del ciclo, unimos la respuesta de la ia al historial
             historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
@@ -420,15 +390,15 @@ async def main(page: ft.Page):
 
         except asyncio.TimeoutError:
             # En caso de que el servidor no responda en el tiempo especificado
-            page.open(ft.SnackBar(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."), bgcolor=ROJO_FUTURO))
+            page.open(ft.SnackBar(ft.Text("Error: El servidor no respondió a tiempo. Intenta de nuevo."), bgcolor=tm.Color.RojoFuturo))
             page.update()
         except (APIError, APIConnectionError, OpenAIError) as e:
             # Manejo de errores con la API
-            page.open(ft.SnackBar(ft.Text(f"Error de conexión con la IA: {str(e)}"), bgcolor=ROJO_FUTURO))
+            page.open(ft.SnackBar(ft.Text(f"Error de conexión con la IA: {str(e)}"), bgcolor=tm.Color.RojoFuturo))
             page.update()
         except Exception as e:
             # Manejo de cualquier otro error no esperado
-            page.open(ft.SnackBar(ft.Text(f"Error inesperado: {str(e)}"), bgcolor=ROJO_FUTURO))
+            page.open(ft.SnackBar(ft.Text(f"Error inesperado: {str(e)}"), bgcolor=tm.Color.RojoFuturo))
             page.update()
 
 
@@ -440,9 +410,9 @@ async def main(page: ft.Page):
         btn_enviar.visible = not config["usar_enter"]
         input_prompt.on_submit = enviar_prompt if config["usar_enter"] else False
         if config["usar_enter"]:
-            page.open(ft.SnackBar(ft.Text("¡Puedes enviar tu consulta pulsando la Tecla Enter! Botón enviar ocultado."), bgcolor=TEAL_MINCYT))
+            page.open(ft.SnackBar(ft.Text("¡Puedes enviar tu consulta pulsando la Tecla Enter! Botón enviar ocultado."), bgcolor=tm.Color.TeMincyt))
         else:
-            page.open(ft.SnackBar(ft.Text("Desactivada opción de envío de consulta pulsando la tecla 'Enter'. Restablecido el Botón de envío."), bgcolor=TEAL_MINCYT))
+            page.open(ft.SnackBar(ft.Text("Desactivada opción de envío de consulta pulsando la tecla 'Enter'. Restablecido el Botón de envío."), bgcolor=tm.Color.TeMincyt))
         page.update()
 
     #: str: Campo de ingreso de consulta o prompt
@@ -456,7 +426,7 @@ async def main(page: ft.Page):
         multiline=not config["usar_enter"],
         shift_enter=True,
         on_submit=enviar_prompt,
-        bgcolor= lambda e: ft.Colors.GREY_300 if page.theme_mode == ft.ThemeMode.LIGHT else ft.Colors.GREY_500,
+        bgcolor= lambda e: tm.Color.AzulClaroLight if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.ColorAzulOscuroDark,
     )
 
     # switch para enviar con enter
@@ -490,7 +460,7 @@ async def main(page: ft.Page):
         config["api_key"] = campo_api_key.value
         config["url_base"] = campo_url_base.value
         guardar_configuracion(config)
-        page.open(ft.SnackBar(ft.Text("¡Configuración Guardada!"), bgcolor=TEAL_MINCYT))
+        page.open(ft.SnackBar(ft.Text("¡Configuración Guardada!"), bgcolor=tm.Color.TeMincyt))
         page.update()
 
     # Boton Guardar la Configuración Avanzada!
@@ -552,19 +522,24 @@ async def main(page: ft.Page):
         page.update()
 
     def cambiar_theme():
+        # definimos los colores según de modo y el tipo de usuario
         global CODE_THEME, CODE_THEME_CLARO, CODE_THEME_OSCURO
         global EXTENSION_SET
+
         if page.theme_mode == ft.ThemeMode.LIGHT:
             page.theme_mode = ft.ThemeMode.DARK
             config["theme_mode"] = "ft.ThemeMode.DARK"
             CODE_THEME = CODE_THEME_OSCURO
+            theme_mode = "dark"
         else:
             page.theme_mode = ft.ThemeMode.LIGHT
             config["theme_mode"] = "ft.ThemeMode.LIGHT"
             CODE_THEME = CODE_THEME_CLARO
+            theme_mode = "light"
 
         actualizar_markdown_ref(respuesta_ia_md_ref,CODE_THEME)
         actualizar_markdown(acercade)
+        gc.actualizar_colores_burbujas(theme_mode) # Actualiza colores y code_theme de las burbujas
         guardar_configuracion(config)
         page.update()
 
@@ -577,7 +552,7 @@ async def main(page: ft.Page):
     def reset_prompt(e):
         input_prompt.value = ""
         input_prompt.focus()
-        page.open(ft.SnackBar(ft.Text("¡Prompt borrado!"), bgcolor=TEAL_MINCYT))
+        page.open(ft.SnackBar(ft.Text("¡Prompt borrado!"), bgcolor=tm.Color.TeMincyt))
         page.update()
 
     # Resetear todos los campos
@@ -585,13 +560,13 @@ async def main(page: ft.Page):
         campo_respuesta.controls.clear()
         input_prompt.value = ""
         input_prompt.focus()
-        page.open(ft.SnackBar(ft.Text("¡Ya puedes empezar una nueva conversación!"), bgcolor=TEAL_MINCYT))
+        page.open(ft.SnackBar(ft.Text("¡Ya puedes empezar una nueva conversación!"), bgcolor=tm.Color.TeMincyt))
         page.update()
 
     # Función para copiar el prompt al portapapeles
     def copiar_prompt(e):
         page.set_clipboard(input_prompt.value)
-        page.open(ft.SnackBar(ft.Text("¡Prompt copiado al portapapeles!"), bgcolor=TEAL_MINCYT))
+        page.open(ft.SnackBar(ft.Text("¡Prompt copiado al portapapeles!"), bgcolor=tm.Color.TeMincyt))
         page.update()  # Actualiza la página para mostrar el SnackBar
 
     # Descarga el chat 
@@ -609,9 +584,9 @@ async def main(page: ft.Page):
                 with open(archivo_historial_chat_md, "w", encoding="utf-8") as archivo:
                     archivo.write(historial_chat)
                     print("¡Chat guardado exitosamente!")
-                    page.open(ft.SnackBar(ft.Text(f"Historial de Chat con la IA {config['modelo']} se ha guardado exitosamente en '{archivo_historial_chat_md}'."), bgcolor=TEAL_MINCYT))
+                    page.open(ft.SnackBar(ft.Text(f"Historial de Chat con la IA {config['modelo']} se ha guardado exitosamente en '{archivo_historial_chat_md}'."), bgcolor=tm.Color.TeMincyt))
             except Exception as e:
-                page.open(ft.SnackBar(ft.Text(f"Error guardando el archivo: ",e), bgcolor=ROJO_FUTURO))
+                page.open(ft.SnackBar(ft.Text(f"Error guardando el archivo: ",e), bgcolor=tm.Color.RojoFuturo))
             page.update()
 
 
@@ -634,7 +609,7 @@ async def main(page: ft.Page):
         elif "linux" == dr_platform:
             url_linux = f"mailto:?subject={urllib.parse.quote(asunto)}&body={urllib.parse.quote(texto)}"
             os.system(f"xdg-open '{url_linux}'")
-        page.open(ft.SnackBar(ft.Text(f"Se comparte el Chat para la plataforma {dr_platform}"), bgcolor=TEAL_MINCYT))
+        page.open(ft.SnackBar(ft.Text(f"Se comparte el Chat para la plataforma {dr_platform}"), bgcolor=tm.Color.TeMincyt))
         page.update()
 
     # Obtener el chat actual
@@ -656,7 +631,7 @@ async def main(page: ft.Page):
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
         page.set_clipboard(get_chat())
-        page.open(ft.SnackBar(ft.Text("¡Respuestas copiadas al portapepeles y en formato Markdown!"), bgcolor=TEAL_MINCYT))
+        page.open(ft.SnackBar(ft.Text("¡Respuestas copiadas al portapepeles y en formato Markdown!"), bgcolor=tm.Color.TeMincyt))
         page.update()  # Actualiza la página para mostrar el SnackBa Gestion de dialogos de confirmación
 
     def on_resetear_campos(e):
@@ -714,35 +689,35 @@ async def main(page: ft.Page):
 
     btn_descargar_chat = get_icon_boton_prompt(
             ft.Icons.DOWNLOAD,
-            AZUL_MINCYT,
+            tm.Color.AzulMincyt,
             'Descargar Chat',
         'Descargar Chat',lambda e:dialogo_guardar_chat.save_file()
             )
 
     btn_compartir_chat = get_icon_boton_prompt(
             ft.Icons.SHARE if dr_platform != "linux" else ft.Icons.ALTERNATE_EMAIL # para que esta instrucción sea válida la coma se coloca al inicio de la linea inferior #Hack @jonasroot ;-)
-            ,AZUL_MINCYT,
+            ,tm.Color.AzulMincyt,
             'Compartir por Email',
             'Compartir',compartir_chat_por_email
             )
 
     btn_copiar_prompt = get_icon_boton_prompt(
             ft.Icons.FILE_COPY,
-            AZUL_MINCYT,
+            tm.Color.AzulMincyt,
             'Copiar Prompt',
             'Prompt',copiar_prompt
             )
 
     btn_copiar_resp = get_icon_boton_prompt(
             ft.Icons.OFFLINE_SHARE_ROUNDED,
-            AZUL_MINCYT,
+            tm.Color.AzulMincyt,
             'Copiar Respuesta',
             'Respuesta',copiar_respuesta
             )
 
     btn_reset_prompt = get_icon_boton_prompt(
             ft.Icons.DELETE_FOREVER_ROUNDED,
-            NARANJA_MINCYT,
+            tm.Color.NaranjaMincyt,
             'Copiar Prompt',
             'Borrar',reset_prompt
             )

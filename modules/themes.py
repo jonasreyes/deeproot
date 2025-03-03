@@ -5,52 +5,67 @@ Este módulo contiene definiciones de temas (claro y oscuro) para deeproot.
 También incluye funciones para aplicar dichos temas.
 """
 
-# Tema claro
-theme_claro = {
-    "background_color": "#F8EFDC",
-    "text_color": "#1F1E1E",
-    "button_color": "#E0E0E0",
-    "button_text_color": "#1F1E1E",
-}
+# Colores para DeepRoot
+class Color:
+    # Colores Mincyt
+    AzulMincyt = "#1D70B7"
+    GrisMincyt = "#9C9B9B"
+    MoradoMincyt = "#653188"
+    NaranjaMincyt = "#F08427"
+    TeMincyt = "#02A7AB"
+    VerdeMincyt = "#026E71"
 
-# Tema oscuro
-theme_oscuro = {
-    "background_color": "#1F1E1E",
-    "text_color": "#F8EFDC",
-    "button_color": "#333333",
-    "button_text_color": "#F8EFDC",
-}
+    # Colores Futuro MS.
+    AzulCieloFuturo = "#A6D8E2"
+    AzulFuturo = "#1440AD"
+    BeigeFuturo = "#F8EFDC"
+    DoradoFuturo = "#EFC318"
+    NaranjaFuturo = "#EC6C3A"
+    NegroFuturo = "#1F1E1E"
+    RojoFuturo = "#E63022"
 
-# CSS personalizado para las citas
-blockquote_decoration={
-    "color": "#4CAF50",  # Color verde
-    "border-left": "5px solid #4CAF50",  # Borde izquierdo verde
-    "padding": "10px",  # Espaciado interno
-    "background-color": "#E8F5E9",  # Fondo verde claro
-    "margin": "10px 0",  # Margen exterior
-    "border-radius": "10px",  # Esquinas redondeadas
-    "box-shadow": "2px 2px 5px rgba(0, 0, 0, 0.1)",  # Sombra
-}
+    # Colores Estándares Chat
+    # Día - Light
+    AzulCian = "#E3F2FD"
+    VerdeClaroLight = "#E8F5E9"
+    Negro = "#000000"
+    GrisOscuroLight = "#333333"
+    BlancoAhumado = "#F5F5F5"
+    #Noche - Dark
+    AzulEgipcio = "#0D47A1"
+    VerdeOscuroDark = "#1B5E20"
+    Blanco = "#FFFFFF"
+    GrisClaro = "#E0E0E0"
+    GrisMedio = "#424242"
+    GrisOscuroDark = "#121212"
 
-pre={
-    "background-color": "#263238",  # Fondo oscuro
-    "color": "#FFFFFF",  # Texto blanco
-    "padding": "10px",  # Espaciado interno
-    "border-radius": "5px",  # Esquinas redondeadas
-}
 
-h2={
-    "color": "#673AB7",  # Color morado
-    "font-size": "20px",
-}
+# Clase ThemeLight
+# Día - Light
+# Globo hace referencia a la burbuja del Chat
+class ThemeLight:
+    # Burbuja del usuario
+    GloboUsuarioFondo = Color.AzulCian
+    GloboUsuarioTexto = Color.Negro
 
-code={
-    "background-color": "#F5F5F5",  # Fondo gris claro
-    "color": "#D32F2F",  # Texto rojo
-    "padding": "2px 4px",
-    "border-radius": "3px",
-}
+    # Burbuja de la IA
+    GloboIAFondo = Color.BlancoAhumado
+    GloboIATexto = Color.GrisOscuroLight
 
-li={
-    "margin-bottom": "5px",  # Espaciado entre elementos de la lista
-}
+    # Fondo de la Interfáz de DeepRoot
+    AppFondo = Color.BlancoAhumado
+
+# Clase ThemeDark
+# Noche - Dark
+# Globo hace referencia a la burbuja del Chat
+class ThemeDark:
+    # Burbuja del usuario
+    GloboUsuarioFondo = Color.AzulEgipcio
+    GloboUsuarioTexto = Color.GrisClaro
+
+    # Burbuja de la IA
+    GloboIAFondo = Color.GrisMedio
+    GloboIATexto = Color.GrisClaro
+
+    # Fondo de la Interfáz de DeepRoot
+    AppFondo = Color.GrisOscuroDark
