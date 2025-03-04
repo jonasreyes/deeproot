@@ -98,6 +98,13 @@ CODE_THEME_CLARO = config["code_theme_claro"]
 CODE_THEME_OSCURO = config["code_theme_oscuro"]
 CODE_THEME = CODE_THEME_CLARO
 
+# Otras Variables Globales
+usuario_manejo_scroll = False
+max_scroll_extent = 0
+contador_chunk = 0 # Contador para actualizar cada N Chunks
+
+frecuencia_actualizacion_cr = 5 # Actualizar cada 5 chunks
+
 async def main(page: ft.Page):
 
     # Configuración del theme inicial
@@ -110,46 +117,27 @@ async def main(page: ft.Page):
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
     page.locale_configuration = ft.Locale("es", "VE")
-    page.auto_scroll=True
+    page.window.center()
 
     # Gestión del Scroll - dándole usabilidad
 
     def on_scroll(e: ft.OnScrollEvent):
-        scroll_usuario = e.event_type
+        global usuario_manejo_scroll, max_scroll_extent
+        
+        print(f"direction: {e.direction}, pixels: {e.pixels}, overscroll: {e.overscroll}")
 
-        # Si el usuario hace scroll procedemos a revisar la dirección del mismo
-        # el criterio establecido aqu√≠ prioriza el uso de deeproot en escritorio
-        # sin embargo en dispositivos móviles tanto ANDROID como IOS, la interacción
-        # o scroll se hace tocando la pantalla, en esas plataformas el sendito de dirección
-        # se invierte, entonces, en esos dispositivos cuando e.direction es == a "forward"
-        # el usuario desea ver hacia abajo, y si direction == "reverse" el usuario desea ir
-        # hacia arriba, quienes hagan mantenimiento a esta app deberían recordar usar
-        # ft.Platform para identificar la plataforma desde donde el usuario corre la app
-        # y de acuerdo a la misma settear aquí los eventos correctamente.
-        if scroll_usuario == "user":
-            # la dirección solo tendrá valor si hay un scroll del usuario,
-            # por tanto solo debemos crear esta variable si antes hay acción del mismo
-            direccion_scroll = e.direction
+        max_scroll_extent = e.max_scroll_extent
 
-            if direccion_scroll == "forward":
-                # para cumplir el deseo del usuario, detenemos el scroll automático.
-                # vale la pena señalar que para que se detenga el scroll no basta 
-                # con setear en False el atributo 'auto_scroll' en ft.Page ni en 
-                # el Control (en nuestro caso campo_respuesta (ft.ListView)), sinó
-                # que ademas debe llevarse offset(de scroll_to) a 0 
-                # (campo_respuesta.scroll_to(offset=0, duration=100))
-                if dr_platform == "ios" or dr_platform == "android":
-                    campo_respuesta.auto_scroll=True 
-                else:
-                    campo_respuesta.auto_scroll=False
-            elif direccion_scroll == "reverse" and campo_respuesta.auto_scroll == False:
-                print(f"El usuario desea leer hacia abajo: direction={e.direction}")
-                # si el usuario mueve scroll hacia abajo y ya estaba en off, el scroll
-                # procederemos a reactivar el scroll automático. 
-                if dr_platform == "ios" or dr_platform == "android":
-                    campo_respuesta.auto_scroll=False
-                else:
-                    campo_respuesta.auto_scroll=True
+        if e.direction in ["forward", "reverse"]:
+            usuario_manejo_scroll = True
+        elif e.direction is None: # El usuario dejó de interactuar
+            usuario_manejo_scroll = False
+
+        # Detectar si el usuario está en la parte inferior
+        if e.pixels >= e.max_scroll_extent -100:
+            print("usuario llegó al final del listview")
+        
+
 
     # creamos una referencia a todos los elementos markdown.
     burbuja_container_ref = ft.Ref[ft.Container]()
@@ -222,6 +210,8 @@ async def main(page: ft.Page):
             {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python y Flet (Framework de Flutter para Python) por Jonás Reyes (jonasroot), programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
             {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
             {"role": "system", "content": "DeepRoot actualmente permite interactuar con tres modelos de deepseek: deepseek-chat, deepseek-coder y deepseek-reasoner. Para trabajar con uno de estos modelos el usuario debe dirigirse a la pestaña 'Configuración API' de DeepRoot seleccionar el modelo de la lista desplegable y pulsar guardar. El ícono de DeepRoot es el de una Ballena, similar a la de DeepSeek, puedes usar un ícono parecido cuando quieras referirte a DeepRoot."},
+            {"role": "system", "content": "DeepRoot puede renderizar imagenes, incrustarlas mediante enlaces Markdown para imágenes públicas disponibles en internet, lo que permite incrustarlas directamente en la interfaz de DeepRoot si esta soporta la renderización de imágenes."},
+            {"role": "system", "content": "DeepRoot tiene compatibilidad para integrarse en el navegador interno de la aplicación Telegram, y telegram puede recibir textos con bloque de código en formato markdown, los rederiza y resalta su sintaxis, así que puedes generar contenido en formato markdown compatible con telegram para que el usuario pueda copiarlo directamente sobre el chat. Puedes simular burbujas de chat formateando el texto como citas. Telegram no procesa el signo numeral como se suele hacer en markdown."},
             {"role": "system", "content": "Como desarrollador de DeepRoot creo que los usuario que desee sacar máximo provecho de la aplicación deberían trabajar desde GNU/Linux y en ese sentido recomiendo usar Canaima GNU/Linux la distribución gnu/linux Venezolana disponible para su descarga en https://canaima.softwarelibre.gob.ve/, esta distribución se basa en Debian y es Rolling Release. También me parece sumamente compatible con DeepRoot el uso de la apliación Obsidian, una fenomenal aplicación para tomar notas, registrar ideas y sistematizar información en formato Markdown, justamente el formato de los archivos descagables de DeepRoot y formato de Copiado al Portapapeles de las conversaciones de DeepRoot, aunque no son aplicaciones integradas el uso de ambas puede ser armónico."},
             {"role": "system", "content": "Presenta la información de manera clara y bien formateada, usando elementos visuales e íconos de manera moderada para mejorar la comprensión sin saturar."},
             {"role": "system", "content": "DeepRoot está en constante desarrollo. Aquellos interesados en colaborar pueden contactar al desarrollador a través de los medios mencionados."},
@@ -241,7 +231,7 @@ async def main(page: ft.Page):
         ],
         expand=True,
         spacing=10,
-        auto_scroll=True,
+       # auto_scroll=True,
         on_scroll=on_scroll,
     )
 
@@ -272,6 +262,10 @@ async def main(page: ft.Page):
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # Enviando consulta de usuarios a la API IA
     async def enviar_prompt(e):
+        """Envía la consulta del usuario y gestiona la conversación."""
+
+        global usuario_manejo_scroll, max_scroll_extent
+
         # Verificamos que la app está configurada con un token de la API
         if not config["api_key"]:
             page.open(ft.SnackBar(ft.Text("Error: API Key no configurada."), bgcolor=tm.Color.RojoFuturo))
@@ -281,10 +275,16 @@ async def main(page: ft.Page):
 
         prompt = input_prompt.value.strip()
         if not prompt:
-            page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=tm.Color.RojoFuturo))
+            plataforma_actual=page.platform.value
+            page.open(ft.SnackBar(ft.Text(f"Ejecutandose en plataforma: {plataforma_actual}"), bgcolor=tm.Color.AzulEgipcio))
+            #page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=tm.Color.RojoFuturo))
             input_prompt.focus()
             page.update()
             return
+
+
+        # Guardamo la posisción actual del scroll
+        scroll_anterior = None
 
         # Agregamos en msj del usuario al Chat.
         # campo_respuesta.controls.clear() # Se comenta este llamado debido a que es importante tener 
@@ -295,10 +295,12 @@ async def main(page: ft.Page):
         input_prompt.value = ""
 
         # gestión usable del Scroll
-        campo_respuesta.scroll_to(offset=0, duration=50)
+        if usuario_manejo_scroll:
+            campo_respuesta.scroll_to(offset=scroll_anterior, duration=800)
+        else:
+            campo_respuesta.scroll_to(offset=max_scroll_extent, duration=800)
+
         campo_respuesta.update() # para forzar la respuesta inmediata usamos este método que es síncrono.
-        input_prompt.update()
-        # pequeña pausa para dar tiempo a la UI de recargar el control.
         await asyncio.sleep(0)
 
         # evitar que el input_prompt vuelva a tener foco automatico en huespedes móviles, ya que activa el teclado en pantalla y es molesto.
@@ -318,6 +320,8 @@ async def main(page: ft.Page):
     # get_respuesta_ia ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # Inicializando cliente OpenAI
     async def get_respuesta_ia(page, prompt, campo_respuesta):
+        """Genera la respuesta de la IA."""
+        global usuario_manejo_scroll, max_scroll_extent, contador_chunk
         try:
             client = openai.OpenAI(api_key=config["api_key"], base_url=config["url_base"])
 
@@ -372,12 +376,25 @@ async def main(page: ft.Page):
                     chunk_texto = chunk.choices[0].delta.content
                     respuesta_ia_burbuja.controls[1].content.value += chunk_texto
                     respuesta_temporal_para_historial[0] += chunk_texto
-                    # formzamos la actualización y desplazamiento en cada chunk recibido
-                    page.update()
-                    campo_respuesta.scroll_to(offset=0, duration=50)
-                    await asyncio.sleep(0)
-                    print(f"Campo: {chunk_texto}")
 
+                    contador_chunk += 1 # Se incrementará el contador
+                    print(f"Chunk: {contador_chunk} - {chunk_texto} | ")
+
+                    if contador_chunk % 3 == 0:
+                        # Si el usuario no está manejando el scroll, desplazamos automáticamente
+                        if not usuario_manejo_scroll:
+                            campo_respuesta.scroll_to(offset=max_scroll_extent, duration=500)
+
+                        campo_respuesta.update()
+                    await asyncio.sleep(0)
+
+
+
+            # Nos aseguramos de actualizar al final si el últim batch no se mostró.
+            if contador_chunk % 3 != 0:
+                campo_respuesta.update()
+
+            # Si la app se ejecuta un SO de escritorio devolveremos el foco luego de haber recibido respuesta.
             input_prompt.focus() if dr_platform in ["macos","windows", "linux"] else None
 
             # antes del cierre del ciclo, unimos la respuesta de la ia al historial
@@ -421,12 +438,12 @@ async def main(page: ft.Page):
         autofocus=True if dr_platform in ["macos","windows", "linux"] else None # No olvidar que la coma la colocaremos al inicio de la siguiente línea.
         ,expand=True,
         min_lines=1,
-        max_lines=2,
+        max_lines=10, #2 if dr_platform != "linux" else 10
         border_radius=10,
         multiline=not config["usar_enter"],
-        shift_enter=True,
         on_submit=enviar_prompt,
-        bgcolor= lambda e: tm.Color.AzulClaroLight if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.ColorAzulOscuroDark,
+        shift_enter=True,
+        bgcolor= lambda e: tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
     )
 
     # switch para enviar con enter
@@ -685,7 +702,12 @@ async def main(page: ft.Page):
 
     # --------- Botones --------------------
     # Botón flotante de envío de consulta, se oculta cuando se decide usar la tecla enter para enviar.
-    btn_enviar = ft.FloatingActionButton(icon=ft.Icons.SEND, visible=not config["usar_enter"])
+    #btn_enviar = ft.FloatingActionButton(icon=ft.Icons.SEND, visible=not config["usar_enter"])
+    btn_enviar = ft.IconButton(
+        icon=ft.Icons.SEND,
+        visible=not config["usar_enter"],
+        on_click=enviar_prompt
+    )
 
     btn_descargar_chat = get_icon_boton_prompt(
             ft.Icons.DOWNLOAD,
@@ -738,13 +760,10 @@ async def main(page: ft.Page):
 
     # ---------- Fin Botones ----------------
 
-    # Asignación de Eventos a los botones
-    btn_enviar.on_click = enviar_prompt
 
     campos_prompt = ft.Row(
         controls=[
             input_prompt,
-            ft.Container(margin=ft.margin.only(left=5)),
             btn_enviar
         ],
         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
