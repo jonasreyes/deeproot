@@ -53,70 +53,141 @@ def get_platform(e, APP_NAME, APP_LEMA):
 #     return dlg
 
 class GestorConversacion:
-    def __init__(self):
+    def __init__(self, page: ft.Page):
         # Referencias para los contenedores de burbujas
-        self.ref_burbuja_usuario_claro = Ref[Container]() 
-        self.ref_burbuja_ia_claro = Ref[Container]() 
-        self.ref_burbuja_usuario_oscuro = Ref[Container]() 
-        self.ref_burbuja_ia_oscuro = Ref[Container]() 
+        self.ref_burbuja_usuario = Ref[Container]() 
+        self.ref_burbuja_ia = Ref[Container]() 
+        self.burbujas_ia = []
+        self.burbujas_usuario = []
+        self.md_burbujas_ia = []
+        self.key_burbuja = 0 # para facilitar la navegación por scroll y poder editar o eliminar las burbujas que se requieran.
+        self.page = page
 
     def obtener_color_burbuja(self, es_usuario, theme_mode):
         """Devuelve el color de fondo de la burbuja según el tema y el tipo de usuario."""
         if es_usuario:
             return ThemeLight.GloboUsuarioFondo if theme_mode == "light" else ThemeDark.GloboUsuarioFondo
         else:
-            return ThemeLight.GloboIAFondo if theme_mode == "light" else ThemeDark.GloboIAFondo
+            # Si no es usuario, preferimos que la burbuja no tenga color de fondo.
+            return None
 
-    def crear_burbuja(self, mensaje, es_usuario, theme_mode, referencia):
+
+    def crear_burbuja(self, mensaje, es_usuario, theme_mode, ref_cont_burbuja_ia, ref_cont_burbuja_usuario, ref_md_burbuja_ia):
         """Crea una burbuja de chat con la referencia adecuada."""
+
+        # a partir de la versión 0.27.0 de Flet, las referencias soy para un solo objeto o control a la vez.
+        ref_container = ft.Ref[ft.Container]()
+        ref_markdown = ft.Ref[ft.Markdown]()
+        ref_avatar = ft.Ref[ft.CircleAvatar]()
+
+
         bgcolor = self.obtener_color_burbuja(es_usuario, theme_mode)
-        ref = (
-            self.ref_burbuja_usuario_claro if es_usuario and theme_mode == "light" else
-            self.ref_burbuja_ia_claro if not es_usuario and theme_mode == "light" else
-            self.ref_burbuja_usuario_oscuro if es_usuario and theme_mode == "dark" else
-            self.ref_burbuja_ia_oscuro
+        #    self.ref_burbuja_usuario if es_usuario else self.ref_burbuja_ia
+
+        # identificador de la burbuja, multiples propósitos
+        key_burbuja = self.key_burbuja+1 # lo mantendremos en dígito (Será 1 más que el número de indice, con lo que podemos saber como manipularlo con el número de indice.)
+
+        # Funciones de edición de burbujas
+
+        def copiar_burbuja():
+            pass
+
+        def modificar_burbuja():
+            pass
+
+        def eliminar_burbuja():
+            pass
+
+        # botones de edición, eliminación y navegación
+        btn_copiar_burbuja =  ft.OutlinedButton(
+            "Copiar", 
+            data=key_burbuja, 
+            on_click=copiar_burbuja,
+            icon="park_rounded"
         )
 
-        # Creación del Avatar
-        avatar = CircleAvatar(
-            content=Icon(Icons.PERSON if es_usuario else Icons.MEMORY),
-            bgcolor=Color.AzulMincyt if es_usuario else Color.GrisMincyt
+        btn_modificar_burbuja =  ft.OutlinedButton(
+            "Modificar", 
+            data=key_burbuja, 
+            on_click=modificar_burbuja,
+            icon="park_rounded"
         )
+
+        btn_eliminar_burbuja =  ft.OutlinedButton(
+            "Eliminar", 
+            data=key_burbuja, 
+            on_click=eliminar_burbuja,
+            icon="park_rounded"
+        )
+
+        # Fila edición de burbuja
+        columna_edicion_burbuja = ft.Column(
+            controls=[btn_copiar_burbuja,btn_modificar_burbuja, btn_eliminar_burbuja], # Atención con esta solución, puede ser problemática, pero insistiré a ver si granulada la composición funciona.
+            alignment=MainAxisAlignment.SPACE_EVENLY
+        )
+
+
 
         # Creamos el contenedor de la burbuja
         contenedor_burbuja = Container(
+            ref=ref_container,
             content=Markdown(
                 value=mensaje,
+                ref=ref_markdown,
                 extension_set="gitHubWeb", # En próxima versión lo haré configurable
                 code_theme="gruvbox-light" if theme_mode == "light" else "gruvbox-dark",
                 selectable=True,
                 auto_follow_links=True,
-                ref=referencia # Indispensable para poder actualizar en caliente el code_theme
             ),
             padding = 10,
             bgcolor = bgcolor,
             border_radius = 10,
-            ref=ref
         )
+
+        if es_usuario:
+            # Creación del Avatar
+            avatar = CircleAvatar(
+                ref=ref_avatar,
+                content=Icon(Icons.PERSON),
+                bgcolor=ThemeLight.GloboUsuarioFondo if theme_mode == "light" else ThemeDark.GloboUsuarioFondo
+            )
+            # alimentamos arreglo de referencias de burbujas del usuario
+            self.burbujas_usuario.append((ref_container,ref_markdown,ref_avatar))
+            # la burbuja del usuario será acompañada de un avatar.
+            fila_controls_burbuja = [avatar, contenedor_burbuja]
+        else:
+            # alimentamos arreglo de referencias de burbujas de la IA
+            self.burbujas_ia.append((ref_container,ref_markdown))
+            # la burbuja de la IA será discreta, por lo que no le colocaremos un Avatar, además
+            # deseamos tenga un estilo que ocupe el mayor espacio de la pantalla.
+            fila_controls_burbuja = [contenedor_burbuja]
+
 
         # Devolvemos una fila con el avatar y la burbuja
         return Row(
-            controls=[avatar,contenedor_burbuja], # Atención con esta solución, puede ser problemática, pero insistiré a ver si granulada la composición funciona.
+            controls=fila_controls_burbuja, # Atención con esta solución, puede ser problemática, pero insistiré a ver si granulada la composición funciona.
             alignment=MainAxisAlignment.END if es_usuario else MainAxisAlignment.START,
-            wrap=True
+            key = key_burbuja,
+            tight = True,
+            wrap = True
         )
 
     def actualizar_colores_burbujas(self, theme_mode):
         """Actualiza los colores de las burbujas y el code_theme según el tema actual."""
-        for ref in [
-            self.ref_burbuja_usuario_claro,
-            self.ref_burbuja_ia_claro,
-            self.ref_burbuja_usuario_oscuro,
-            self.ref_burbuja_ia_oscuro
-        ]:
-            if ref.current:
-                es_usuario = ref.current.bgcolor in [ThemeLight.GloboUsuarioFondo, ThemeDark.GloboUsuarioFondo]
-                ref.current.bgcolor = self.obtener_color_burbuja(es_usuario,theme_mode)
-                if hasattr(ref.current.content, "code_theme"):
-                    ref.current.content.code_theme = "gruvbox-light" if theme_mode == "light" else "gruvbox-dark" # Revisar la eficiencia, puede ser quizas mejor asignación directa, tenemos la rerefencia.
-                ref.current.update()
+
+        # Recorrido de todas las burbujas IA para actulizar sus colores
+        for ref_cont, ref_md in self.burbujas_ia:
+            if ref_cont.current:
+                ref_cont.current.bgcolor = ThemeDark.GloboIAFondo if theme_mode == "dark" else None
+
+            if ref_md.current:
+                ref_md.current.code_theme = "gruvbox-dark" if theme_mode == "dark" else "gruvbox-light"
+
+        # Recorrido de todas las burubujas de usuario y actualización de los colores
+        for ref_cont, ref_md, ref_ava in self.burbujas_usuario:
+            if ref_cont.current:
+                ref_cont.current.bgcolor = ThemeDark.GloboUsuarioFondo if theme_mode == "dark" else ThemeLight.GloboUsuarioFondo
+
+            if ref_ava.current:
+                ref_ava.current.bgcolor = ThemeDark.GloboUsuarioFondo if theme_mode == "dark" else ThemeLight.GloboUsuarioFondo
+        self.page.update()

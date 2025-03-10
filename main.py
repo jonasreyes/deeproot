@@ -1,6 +1,6 @@
 """
 Nombre de la aplicación: DEEPROOT
-Versión: 0.1.1
+Versión: 0.1.0
 Autor: Jonás Antonio Reyes Casanova (jonasroot)
 Fecha de creación: 28-01-2025
 Última actualización: 27-02-2025
@@ -21,6 +21,8 @@ Contacto:
 #PatriaYSoftwareLibre
 """
 
+from modules import instrucciones
+from modules.utilidades import *
 import openai
 from openai import OpenAIError, APIConnectionError, APIError
 import flet as ft
@@ -38,11 +40,6 @@ import markdown
 from modules import themes as tm
 from modules.interfaz import GestorConversacion
 
-# contexto de tiempo
-hoy = datetime.now()
-fecha_formateada = hoy.strftime("(%d/%m/%Y - %H:%M:%S)")
-
-gc = GestorConversacion()
 
 # hora para la IA
 def get_hoy(para_ia=True):
@@ -72,7 +69,8 @@ def cargar_configuracion():
         "api_key": "",
         "url_base": "",
         "stream": True,
-        "max_tokens": 8192 # por defecto usa 4096, otros números: 2048, 1024, 512
+        "max_tokens": 8192, # por defecto usa 4096, otros números: 2048, 1024, 512
+        "temperature":0 
     }
 
 # Guardar configuración
@@ -102,48 +100,46 @@ CODE_THEME = CODE_THEME_CLARO
 usuario_manejo_scroll = False
 max_scroll_extent = 0
 contador_chunk = 0 # Contador para actualizar cada N Chunks
-
+contador_burbuja = 0 # Contador para poder generar un Key a cada burbuja y posiblemente también una referencia única.
 frecuencia_actualizacion_cr = 5 # Actualizar cada 5 chunks
 
 async def main(page: ft.Page):
 
+    gc = GestorConversacion(page)
+
     # Configuración del theme inicial
     dr_platform = get_platform(page, APP_NAME, APP_LEMA)
     locale.setlocale(locale.LC_TIME, 'es_VE.UTF-8') if dr_platform != "macos" else None #Deshabilitamos la localización profunda si el se deeproot se ejecuta desde MacOS ya que este sistema da problemas con locale.
-    page.theme_mode = ft.ThemeMode.LIGHT
-    page.window.width = 512
+    page.window.center()
+    page.theme_mode = ft.ThemeMode.DARK
+    page.window.width = 1024
     page.window.height = 768
     page.padding = 20
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
     page.horizontal_alignment = ft.CrossAxisAlignment.STRETCH
     page.locale_configuration = ft.Locale("es", "VE")
-    page.window.center()
 
     # Gestión del Scroll - dándole usabilidad
 
     def on_scroll(e: ft.OnScrollEvent):
-        global usuario_manejo_scroll, max_scroll_extent
-        
-        print(f"direction: {e.direction}, pixels: {e.pixels}, overscroll: {e.overscroll}")
+        global usuario_manejo_scroll
+        usuario_manejo_scroll = e.pixels != e.max_scroll_extent # Si el usuario no está en el final del scroll, se detiene el auto_scroll.
 
-        max_scroll_extent = e.max_scroll_extent
+        print(f"\ndirection: {e.direction}, pixels: {e.pixels}, overscroll: {e.overscroll}")
 
-        if e.direction in ["forward", "reverse"]:
-            usuario_manejo_scroll = True
-        elif e.direction is None: # El usuario dejó de interactuar
-            usuario_manejo_scroll = False
-
-        # Detectar si el usuario está en la parte inferior
-        if e.pixels >= e.max_scroll_extent -100:
-            print("usuario llegó al final del listview")
-        
+        # Mostramos/ecultamos botones según la posición del scroll.
+        btn_ir_al_final.visible = usuario_manejo_scroll # Aparece si el usuario no está en el final.
+        btn_ir_al_inicio.visible = e.pixels > 200 # solo aparece si hay mensajes previos
+        page.update()
 
 
     # creamos una referencia a todos los elementos markdown.
-    burbuja_container_ref = ft.Ref[ft.Container]()
-
+    ref_cont_burbuja_usuario = ft.Ref[ft.Container]()
+    ref_cont_burbuja_ia = ft.Ref[ft.Container]()
+    ref_md_burbuja_ia = ft.Ref[ft.Markdown]()
+    ref_md_acerca = ft.Ref[ft.Markdown]()
     # creamos una referencia a todos los elementos markdown.
-    respuesta_ia_md_ref = ft.Ref[ft.Markdown]()
+    ref_md_ia = ft.Ref[ft.Markdown]()
 
     # en futura actualización facilitaré la personalización completa del theme.
     page.theme = ft.Theme(
@@ -204,20 +200,7 @@ async def main(page: ft.Page):
 
     # arreglo para almacenar conversación (chat co ia)
     fecha_de_hoy = get_hoy()
-    historial_conversacion=[
-            {"role": "system", "content": f"{fecha_de_hoy}, Te llamas DeepSeek y charlamos a través de DeepRoot, un cliente API para los modelos IA de DeepSeek, con posible compatibilidad futura con otros modelos. Eres un asistente experto en programación y promotor del software libre. Los mensajes del usuario siempre incorporarán la fecha y hora actualizada al inicio de su mensaje aunque no lo sabrán porque la fecha es insertada en el backend de DeepRoot, esta apliación Cliente API para la IA de DeepSeek. Teniendo la primera fecha y hora que se te dá y la última que pueda aparacer en el inicio del mensaje del usuario, podras estimar cuanto tiempo lleva comunicandose contigo el usuario. La hora y fecha más actualizada siempre será la que venga en el último mensaje del usuario."},
-            {"role": "system", "content": f"Responde con la fecha u hora basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."},
-            {"role": "system", "content": "Si el usuario muestra interés en DeepRoot, puedes mencionar que es una aplicación desarrollada en Python y Flet (Framework de Flutter para Python) por Jonás Reyes (jonasroot), programador venezolano y promotor del software libre. Puedes compartir su canal de Telegram: https://t.me/jonasroot y el canal oficial de DeepRoot: https://t.me/deeproot_app. El repositorio oficial de DeepRoot: https://github.com/jonasreyes/deeproot.git"},
-            {"role": "system", "content": "DeepRoot facilita el acceso a IA avanzada y sin censura, siendo útil para científicos, investigadores, estudiantes y el público en general. Permite descargar respuestas en formato markdown y compartir historiales de chat por correo electrónico en HTML (se recomienda tener configurado un cliente de correo)."},
-            {"role": "system", "content": "DeepRoot actualmente permite interactuar con tres modelos de deepseek: deepseek-chat, deepseek-coder y deepseek-reasoner. Para trabajar con uno de estos modelos el usuario debe dirigirse a la pestaña 'Configuración API' de DeepRoot seleccionar el modelo de la lista desplegable y pulsar guardar. El ícono de DeepRoot es el de una Ballena, similar a la de DeepSeek, puedes usar un ícono parecido cuando quieras referirte a DeepRoot."},
-            {"role": "system", "content": "DeepRoot puede renderizar imagenes, incrustarlas mediante enlaces Markdown para imágenes públicas disponibles en internet, lo que permite incrustarlas directamente en la interfaz de DeepRoot si esta soporta la renderización de imágenes."},
-            {"role": "system", "content": "DeepRoot tiene compatibilidad para integrarse en el navegador interno de la aplicación Telegram, y telegram puede recibir textos con bloque de código en formato markdown, los rederiza y resalta su sintaxis, así que puedes generar contenido en formato markdown compatible con telegram para que el usuario pueda copiarlo directamente sobre el chat. Puedes simular burbujas de chat formateando el texto como citas. Telegram no procesa el signo numeral como se suele hacer en markdown."},
-            {"role": "system", "content": "Como desarrollador de DeepRoot creo que los usuario que desee sacar máximo provecho de la aplicación deberían trabajar desde GNU/Linux y en ese sentido recomiendo usar Canaima GNU/Linux la distribución gnu/linux Venezolana disponible para su descarga en https://canaima.softwarelibre.gob.ve/, esta distribución se basa en Debian y es Rolling Release. También me parece sumamente compatible con DeepRoot el uso de la apliación Obsidian, una fenomenal aplicación para tomar notas, registrar ideas y sistematizar información en formato Markdown, justamente el formato de los archivos descagables de DeepRoot y formato de Copiado al Portapapeles de las conversaciones de DeepRoot, aunque no son aplicaciones integradas el uso de ambas puede ser armónico."},
-            {"role": "system", "content": "Presenta la información de manera clara y bien formateada, usando elementos visuales e íconos de manera moderada para mejorar la comprensión sin saturar."},
-            {"role": "system", "content": "DeepRoot está en constante desarrollo. Aquellos interesados en colaborar pueden contactar al desarrollador a través de los medios mencionados."},
-            {"role": "system", "content": "Si el usuario solo te saluda, responde con tu nombre y pregunta cómo puedes ayudarle. Evita presentar información detallada sobre DeepRoot a menos que el usuario lo solicite."},
-            {"role": "system", "content": "En la versión actual (DeepRoot V 0.1.0), he habilitado el registro de un historial de la conversación, mientras DeepRoot no sea cerrada podras tener información de contexto y de las conversaciones con el usuario durante la actual sesión. Esto mejorará pero por lo pronto a esto nos sujetamos. Si el usuario hace referencia a preguntas anteriores, o si el prompt pareciera continuar con una conversación anterior evita saludar de nuevo, responde de manera inteligente y coherente."},
-    ]
+    historial_conversacion = instrucciones.instrucciones
 
     # referencia para scroll de respuesta
     # refactorizar próximamente
@@ -231,8 +214,8 @@ async def main(page: ft.Page):
         ],
         expand=True,
         spacing=10,
-       # auto_scroll=True,
         on_scroll=on_scroll,
+        auto_scroll = False
     )
 
     # Función Actualizar Markdown
@@ -245,14 +228,15 @@ async def main(page: ft.Page):
 
     # Actualizar los elementos markdown que tengar referencia
     def actualizar_markdown_ref(ref,code_theme):
+        print(f"ref.current: {ref.current}")
         ref.current.code_theme = code_theme
         ref.current.update()
 
     # :::::::::::::::::::::::::::::::: burbuja_mensaje ::::::::::::::::::::::::::::::::::::
     # Función de construcción de la burbuja Chat
-    def burbuja_mensaje(mensaje, es_usuario, referencia=respuesta_ia_md_ref):
+    def burbuja_mensaje(mensaje, es_usuario, ref_cont_burbuja_ia=ref_cont_burbuja_ia, ref_cont_burbuja_usuario=ref_cont_burbuja_usuario, ref_md_burbuja_ia=ref_md_burbuja_ia):
         theme_mode = "light" if page.theme_mode == ft.ThemeMode.LIGHT else "dark"
-        return gc.crear_burbuja(mensaje, es_usuario, theme_mode, referencia)
+        return gc.crear_burbuja(mensaje, es_usuario, theme_mode, ref_cont_burbuja_ia, ref_cont_burbuja_usuario, ref_md_burbuja_ia)
         
 
 
@@ -283,8 +267,6 @@ async def main(page: ft.Page):
             return
 
 
-        # Guardamo la posisción actual del scroll
-        scroll_anterior = None
 
         # Agregamos en msj del usuario al Chat.
         # campo_respuesta.controls.clear() # Se comenta este llamado debido a que es importante tener 
@@ -295,12 +277,10 @@ async def main(page: ft.Page):
         input_prompt.value = ""
 
         # gestión usable del Scroll
-        if usuario_manejo_scroll:
-            campo_respuesta.scroll_to(offset=scroll_anterior, duration=800)
-        else:
-            campo_respuesta.scroll_to(offset=max_scroll_extent, duration=800)
-
-        campo_respuesta.update() # para forzar la respuesta inmediata usamos este método que es síncrono.
+        if not usuario_manejo_scroll:
+            page.update()
+            campo_respuesta.scroll_to(offset=1, duration=500)
+        page.update()
         await asyncio.sleep(0)
 
         # evitar que el input_prompt vuelva a tener foco automatico en huespedes móviles, ya que activa el teclado en pantalla y es molesto.
@@ -321,35 +301,36 @@ async def main(page: ft.Page):
     # Inicializando cliente OpenAI
     async def get_respuesta_ia(page, prompt, campo_respuesta):
         """Genera la respuesta de la IA."""
-        global usuario_manejo_scroll, max_scroll_extent, contador_chunk
+
+        global usuario_manejo_scroll, contador_chunk
+
         try:
             client = openai.OpenAI(api_key=config["api_key"], base_url=config["url_base"])
 
             # obtenemos la fecha y hora actual para dar información de contexto temporal a la IA
-            fecha_mas_reciente = get_hoy(para_ia=False)
+            prompt_oculto = generar_prompt_oculto(prompt, config)
 
             # mensajes de configuración DeepRoot
-            historial_conversacion.append({"role": "user", "content": f"{fecha_mas_reciente}, {prompt}"})
+            historial_conversacion.append({"role": "user", "content": f"{prompt_oculto}"})
 
             # Creamos la variable 'respuesta_temporal_para_historial'
             respuesta_temporal_para_historial = [""]
 
             # Avatar y Barra de Progreso temporales
-            indicador_de_carga = ft.Row(
-                [
-                ft.CircleAvatar(
-                        content=Icon(ft.Icons.MEMORY),
-                        bgcolor=Color.GrisMincyt
-                    ),
-                ft.ProgressBar(width=page.width*0.8)
-                ],
-                width=page.width*0.9,
-                alignment=ft.MainAxisAlignment.START)
-
+            indicador_de_carga = ft.ProgressBar()
             # Añadimos el avatar y la barra de progreso al campo_respuesta
+
             campo_respuesta.controls.append(indicador_de_carga)
-            campo_respuesta.update() # actualizamos la interfáz para que sea el indicador_de_carga
-            await asyncio.sleep(0) # damos tiempo pequeño para que pueda actualizarse la interfáz.
+            if not usuario_manejo_scroll:
+                page.update()
+                campo_respuesta.scroll_to(offset=1, duration=500)
+            page.update()
+            await asyncio.sleep(0)
+
+
+
+        #    campo_respuesta.update() # actualizamos la interfáz para que sea el indicador_de_carga
+        #    await asyncio.sleep(0) # damos tiempo pequeño para que pueda actualizarse la interfáz.
 
             # preparamos la burbuja de mensaje vacía para luego añadir la respuesta de la IA.
             respuesta_ia_burbuja = burbuja_mensaje("", es_usuario=False)
@@ -357,16 +338,22 @@ async def main(page: ft.Page):
 
             # Añadimos a campo_respuesta la burbuja para la respuesta de la IA, se cargará asícronamente.
             campo_respuesta.controls.append(respuesta_ia_burbuja)
-            campo_respuesta.update() # actualizamos campo_respuesta para que se refleje respuesta_ia_burbuja
-            await asyncio.sleep(0) # pequeña pausa para acutaliaar UI antes de esperar a la API
+            # gestión usable del Scroll
+            if not usuario_manejo_scroll:
+                page.update()
+                campo_respuesta.scroll_to(offset=1, duration=500)
+            page.update()
+            await asyncio.sleep(0)
+            #campo_respuesta.update() # actualizamos campo_respuesta para que se refleje respuesta_ia_burbuja
+            #await asyncio.sleep(0) # pequeña pausa para acutaliaar UI antes de esperar a la API
 
             # Establecemos un tiempo máximo de espera para la respuesta de la API
             # Obtenemos la respuesta de la IA en streaming
             respuesta = client.chat.completions.create(
                 model=config["modelo"],
                 messages=historial_conversacion,
-                temperature=0,
-                stream=True,
+                temperature=config["temperature"],
+                stream=config["stream"],
                 max_tokens=config["max_tokens"]
             )
 
@@ -374,33 +361,32 @@ async def main(page: ft.Page):
             for chunk in respuesta:
                 if chunk.choices[0].delta.content:
                     chunk_texto = chunk.choices[0].delta.content
-                    respuesta_ia_burbuja.controls[1].content.value += chunk_texto
+                    respuesta_ia_burbuja.controls[0].content.value += chunk_texto
                     respuesta_temporal_para_historial[0] += chunk_texto
 
                     contador_chunk += 1 # Se incrementará el contador
                     print(f"Chunk: {contador_chunk} - {chunk_texto} | ")
 
-                    if contador_chunk % 3 == 0:
+                    if contador_chunk % 5 == 0:
                         # Si el usuario no está manejando el scroll, desplazamos automáticamente
+                        # gestión usable del Scroll
                         if not usuario_manejo_scroll:
-                            campo_respuesta.scroll_to(offset=max_scroll_extent, duration=500)
-
-                        campo_respuesta.update()
-                    await asyncio.sleep(0)
-
+                            page.update()
+                            campo_respuesta.scroll_to(offset=1, duration=500)
+                        page.update()
+                        await asyncio.sleep(0)
 
 
             # Nos aseguramos de actualizar al final si el últim batch no se mostró.
-            if contador_chunk % 3 != 0:
-                campo_respuesta.update()
-
+            if contador_chunk % 5 != 0:
+                #campo_respuesta.update()
+                page.update()
             # Si la app se ejecuta un SO de escritorio devolveremos el foco luego de haber recibido respuesta.
             input_prompt.focus() if dr_platform in ["macos","windows", "linux"] else None
 
             # antes del cierre del ciclo, unimos la respuesta de la ia al historial
             historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
 
-            print(f"Fecha Mas Reciente: {fecha_mas_reciente} \nFecha de Inicio Historial: {fecha_de_hoy}")
             print(f"Plataforma actual: {dr_platform}")
             # retornamos respuesta en limpio, que no se usará por ahora, pero que puede servir más adelante.
             return respuesta_temporal_para_historial[0]
@@ -418,6 +404,40 @@ async def main(page: ft.Page):
             page.open(ft.SnackBar(ft.Text(f"Error inesperado: {str(e)}"), bgcolor=tm.Color.RojoFuturo))
             page.update()
 
+    btn_ir_al_final = ft.FloatingActionButton(
+        #text = "⬇",
+        icon=Icons.KEYBOARD_DOUBLE_ARROW_DOWN_ROUNDED,
+        on_click = lambda e: ir_al_final(),
+        visible = False,
+        bgcolor = ft.Colors.with_opacity(0.4, ft.Colors.WHITE),
+    )
+
+    btn_ir_al_inicio = ft.FloatingActionButton(
+        #text = "⬆",
+        icon=Icons.KEYBOARD_DOUBLE_ARROW_UP_ROUNDED,
+        on_click = lambda e: ir_al_inicio(),
+        visible = False,
+        bgcolor = ft.Colors.with_opacity(0.4, ft.Colors.WHITE)
+    )
+
+    def ensamblar_campo_respuesta():
+        stack = ft.Stack([
+            campo_respuesta,  # Chat (se mantiene en el fondo)
+            ft.Container(btn_ir_al_inicio,right=40,bottom=0, width=30, height=30),
+            ft.Container(btn_ir_al_final,right=0,bottom=0, width=30, height=30),
+        ], expand=True)
+
+        return stack
+
+    def ir_al_final():
+        """Forzamos el scroll hasta el final"""
+        campo_respuesta.scroll_to(offset=-1, duration=500)
+        page.update()
+
+    def ir_al_inicio():
+        """Forzamos el scroll hasta el inicio"""
+        campo_respuesta.scroll_to(offset=0, duration=500)
+        page.update()
 
     # Alternativa para usar enter
     def on_usar_enter(e):
@@ -439,10 +459,12 @@ async def main(page: ft.Page):
         ,expand=True,
         min_lines=1,
         max_lines=10, #2 if dr_platform != "linux" else 10
-        border_radius=10,
         multiline=not config["usar_enter"],
         on_submit=enviar_prompt,
         shift_enter=True,
+        #border=ft.InputBorder.NONE,
+        border_width=0,
+        border_radius=ft.border_radius.all(10),
         bgcolor= lambda e: tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
     )
 
@@ -505,7 +527,7 @@ async def main(page: ft.Page):
             btn_guardar_conf
         ],
         spacing=10,
-        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
+        #scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
     )
 
 
@@ -515,7 +537,7 @@ async def main(page: ft.Page):
         code_theme=CODE_THEME,
         selectable = True,
         auto_follow_links = True,
-        ref=respuesta_ia_md_ref
+        ref=ref_md_acerca
     )
 
     # panel configuración modelos
@@ -524,7 +546,7 @@ async def main(page: ft.Page):
             acercade,
         ],
         spacing=10,
-        scroll=ft.ScrollMode.AUTO
+        #scroll=ft.ScrollMode.AUTO
     )
 
     # Función para actualizar configuraciones
@@ -541,20 +563,22 @@ async def main(page: ft.Page):
     def cambiar_theme():
         # definimos los colores según de modo y el tipo de usuario
         global CODE_THEME, CODE_THEME_CLARO, CODE_THEME_OSCURO
-        global EXTENSION_SET
 
         if page.theme_mode == ft.ThemeMode.LIGHT:
             page.theme_mode = ft.ThemeMode.DARK
             config["theme_mode"] = "ft.ThemeMode.DARK"
             CODE_THEME = CODE_THEME_OSCURO
             theme_mode = "dark"
+            print(f"cambiar_theme disparado - Theme Actual: ThemeMode.LIGHT")
         else:
             page.theme_mode = ft.ThemeMode.LIGHT
             config["theme_mode"] = "ft.ThemeMode.LIGHT"
             CODE_THEME = CODE_THEME_CLARO
             theme_mode = "light"
+            print(f"cambiar_theme disparado - Theme Actual: ThemeMode.DARK")
+            
 
-        actualizar_markdown_ref(respuesta_ia_md_ref,CODE_THEME)
+        #actualizar_markdown_ref(ref_md_burbuja_ia,CODE_THEME)
         actualizar_markdown(acercade)
         gc.actualizar_colores_burbujas(theme_mode) # Actualiza colores y code_theme de las burbujas
         guardar_configuracion(config)
@@ -787,8 +811,8 @@ async def main(page: ft.Page):
                 btn_cerrar
             ], 
             spacing=4,
-            scroll=True,
             alignment=ft.MainAxisAlignment.CENTER,
+            #scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
         )
         page.update()
     elif dr_platform in ["windows", "macos"]: # para estos sistemas el botón "Salír" funciona. en Macos y el Windows no funciona descargar porque para linux se apoya en Zenity. Más adelantes se buscarán alternativas.
@@ -802,7 +826,6 @@ async def main(page: ft.Page):
                 btn_cerrar
             ], 
             spacing=4,
-            scroll=True,
             alignment=ft.MainAxisAlignment.CENTER,
         )
         page.update()
@@ -816,25 +839,25 @@ async def main(page: ft.Page):
                 btn_reset_prompt,
             ], 
             spacing=4,
-            scroll=True,
             alignment=ft.MainAxisAlignment.CENTER,
         )
         page.update()
 
-    respuesta_area = ft.Column(
-        controls=[
-            campo_respuesta,
-        ],
-        expand=True,  # Ocupa el espacio vertical disponible
-        alignment=ft.MainAxisAlignment.END,
-        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
-    )
+    respuesta_area = ensamblar_campo_respuesta()
+  #  respuesta_area = ft.Column(
+  #      controls=[
+  #          campo_respuesta,
+  #      ],
+  #      expand=True,  # Ocupa el espacio vertical disponible
+  #      alignment=ft.MainAxisAlignment.END,
+  #      horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+  #  )
 
     container_panel_respuesta = ft.Container(
         content=respuesta_area,
         padding=20,
-        border=ft.border.all(1, ft.Colors.GREY_300),
-        border_radius=10,
+        #border=ft.border.all(1, ft.Colors.GREY_300),
+        #border_radius=10,
         expand=True,
     )
 
