@@ -38,6 +38,91 @@ def get_platform(e, APP_NAME, APP_LEMA):
 
     return e.platform.value
 
+def get_aviso(referencia):
+    
+    return ft.Row(
+        ref=referencia,
+        controls=[
+            ft.Column(
+                controls=[
+                    # Containers anidados y con estilo
+                    ft.Container(
+                        ft.Container(
+                            ft.Stack(
+                                [
+                                    # Imágen de Fondo
+                                    #ft.Image(
+                                    #    src="./img/deep.jpg",
+                                    #    width=360,
+                                    #    height=260,
+                                    #    fit=ft.ImageFit.COVER,
+                                    #    border_radius=11,
+                                    #),
+                                    ft.Container(
+                                        border_radius=11,
+                                        rotate=ft.Rotate(0.98*3.14),
+                                        width=360,
+                                        height=260,
+                                        bgcolor="#22ffffff",
+                                        gradient = ft.LinearGradient([Color.AzulEgipcio,Color.AzulMincyt]),
+                                    ),
+                                    ft.Container(
+                                        ft.Container(
+                                            ft.Column(
+                                                [
+                                                    ft.Container(
+                                                        ft.Image(
+                                                            src="./img/deeproot.png",
+                                                            width=100,
+                                                        ), padding=ft.padding.only(130),
+                                                    ),
+                                                    ft.Text(
+                                                        "DeepRoot",
+                                                        width=360,
+                                                        text_align="center",
+                                                        weight="w900",
+                                                        size=20
+                                                    ),
+                                                    ft.Text(
+                                                        "¡Te damos la bienvenida al cliente de \nInteligencia Artificial!",
+                                                        width=360,
+                                                        text_align="center",
+                                                        weight=ft.FontWeight.BOLD,
+                                                        size=14
+                                                    ),
+
+                                                ], expand=True, alignment = ft.MainAxisAlignment.CENTER,
+                                            ),
+                                        ),
+                                        border_radius=11,
+                                        width=360,
+                                        height=260,
+                                        bgcolor="#22ffffff",
+                                        gradient = ft.LinearGradient([Color.AzulEgipcio,Color.AzulMincyt]),
+                                    ),
+                                ]
+                            ),
+                            padding=20,
+                            width = 360,
+                            height = 560,
+                        ),
+                        width=400,
+                        height=360,
+                        #gradient = ft.LinearGradient([Color.AzulEgipcio,Color.AzulMincyt]),
+                        expand = True
+                    )
+
+                            ],
+                            alignment = ft.MainAxisAlignment.CENTER,
+                            horizontal_alignment = ft.CrossAxisAlignment.CENTER,
+                            expand = True
+                        )
+                    ],
+                    expand=True,
+                    alignment = ft.MainAxisAlignment.CENTER,
+                )
+
+
 # Función de Diágolos Alerta
 # def dialogo_alert(titulo,mensaje, funcion_si,funcion_no=cerrar_dialogo, modal=True):
 #     dlg = ft.AlertDialog(

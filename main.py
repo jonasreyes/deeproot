@@ -182,21 +182,15 @@ async def main(page: ft.Page):
 
     # Respuestas - EXPERIMENTAL
     # Respuesta que devuelve la IA
-    respuesta_prompt_md = ft.Text(
-        "Bienvenido a DeepRoot Cliente API de DeepSeek AI", 
-        weight=ft.FontWeight.W_800, 
-        size=16, 
-        text_align=ft.TextAlign.CENTER, 
-        selectable=True
-    )
-
-    contenedor_respuesta_prompt_md = ft.Container(
-        content=respuesta_prompt_md,
-        bgcolor=tm.Color.AzulMincyt,
-        border_radius=10,
-        padding=10,
-        expand=True,
-    )
+#    respuesta_prompt_md = ft.Text(
+#        "Bienvenido a DeepRoot Cliente API de DeepSeek AI", 
+#        weight=ft.FontWeight.W_800, 
+#        size=16, 
+#        text_align=ft.TextAlign.CENTER, 
+#        selectable=True
+#    )
+    ref_row_aviso = ft.Ref[ft.Row]()
+    contenedor_respuesta_prompt_md = get_aviso(ref_row_aviso)
 
     # arreglo para almacenar conversación (chat co ia)
     fecha_de_hoy = get_hoy()
@@ -267,11 +261,16 @@ async def main(page: ft.Page):
             return
 
 
+        # Verificamos si el aviso de bienvenida existe y lo eliminamos.
+        if ref_row_aviso.current in campo_respuesta.controls:
+            campo_respuesta.controls.remove(ref_row_aviso.current)
+            campo_respuesta.update()
 
         # Agregamos en msj del usuario al Chat.
         # campo_respuesta.controls.clear() # Se comenta este llamado debido a que es importante tener 
         # |-> el historial al menos en pantalla. Puede pensarse en otra estratégia para mantener limpia la interfáz
         # |-> sin tener que desacer el historial.
+
         respuesta_temprana=burbuja_mensaje(prompt,es_usuario=True)
         campo_respuesta.controls.append(respuesta_temprana)
         input_prompt.value = ""
@@ -892,6 +891,7 @@ async def main(page: ft.Page):
         ],
         alignment=ft.MainAxisAlignment.END
     )
+
 
 
     # Agregamos componentes a la página
