@@ -72,7 +72,7 @@ def get_aviso(referencia):
                                                 [
                                                     ft.Container(
                                                         ft.Image(
-                                                            src="./img/deeproot.png",
+                                                            src="assets/img/deep.jpg",
                                                             width=100,
                                                         ), padding=ft.padding.only(130),
                                                     ),

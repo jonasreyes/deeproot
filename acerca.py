@@ -1,7 +1,7 @@
 de="""
 # Acerca de DEEPROOT
 
-> **"La verdadera inteligencia no solo resuelve problemas, sino que cultiva la vida..."**
+**"La verdadera inteligencia no solo resuelve problemas, sino que cultiva la vida..."**
 
 En un mundo marcado por desigualdades históricas, las tecnologías de la información emergen como herramientas poderosas para descolonizar el conocimiento y construir futuros más justos. La inclusión digital y las tecnologías libres no son solo medios técnicos, sino actos de resistencia y esperanza. Representan la posibilidad de democratizar el acceso al saber, de romper las cadenas de la dependencia y de honrar la diversidad de saberes que han sido marginados por siglos.
 
@@ -14,15 +14,15 @@ La ciencia, la tecnología y la innovación deben ser descolonizadas, no para ne
 
 ## Sobre el desarrollo de DeepRoot
 
-> **Nombre de la aplicación:** DEEPROOT
-> 
-> **Versión:** 0.1.0
-> 
-> **Autor:** Jonás Antonio Reyes Casanova (jonasroot)
-> 
-> **Fecha de creación:** 28-01-2025
-> 
-> **Última actualización:** 25-02-2025
+ **Nombre de la aplicación:** DEEPROOT
+ 
+ **Versión:** 0.1.0
+ 
+ **Autor:** Jonás Antonio Reyes Casanova (jonasroot)
+ 
+ **Fecha de creación:** 28-01-2025
+ 
+ **Última actualización:** 12-03-2025
 
 **Descripción:**
 Esta aplicación es un cliente de escritorio y móvil para facilitar el acceso y disfrute del Servicio API de DeepSeek. Se requiere de un token de DeepSeek Platform para poder funcionar. Es un desarrollo independiente, inspirado en los valores del Software Libre en Venezuela. Es resultado de los incentivos éticos de la Universidad Bolivariana de Venezuela y la Comunidad de Canaima GNU/Linux.

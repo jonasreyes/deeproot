@@ -453,7 +453,8 @@ async def main(page: ft.Page):
 
     #: str: Campo de ingreso de consulta o prompt
     input_prompt = ft.TextField(
-        label="Escribe tu consulta",
+        #label="Escribe tu consulta",
+        hint_text="¡Escribe tu consulta!",
         autofocus=True if dr_platform in ["macos","windows", "linux"] else None # No olvidar que la coma la colocaremos al inicio de la siguiente línea.
         ,expand=True,
         min_lines=1,
@@ -461,9 +462,10 @@ async def main(page: ft.Page):
         multiline=not config["usar_enter"],
         on_submit=enviar_prompt,
         shift_enter=True,
-        #border=ft.InputBorder.NONE,
+        content_padding = ft.padding.all(30),
+        text_size=18,
         border_width=0,
-        border_radius=ft.border_radius.all(10),
+        border_radius=ft.border_radius.all(40),
         bgcolor= lambda e: tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
     )
 
@@ -526,7 +528,7 @@ async def main(page: ft.Page):
             btn_guardar_conf
         ],
         spacing=10,
-        #scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
+        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
     )
 
 
@@ -539,13 +541,19 @@ async def main(page: ft.Page):
         ref=ref_md_acerca
     )
 
+
+    ref_row_acerca_aviso = ft.Ref[ft.Row]()
+    acerca_aviso = get_aviso(ref_row_acerca_aviso)
+
+
     # panel configuración modelos
     tab_acerca = ft.Column(
         [
+            acerca_aviso,
             acercade,
         ],
         spacing=10,
-        #scroll=ft.ScrollMode.AUTO
+        scroll=ft.ScrollMode.AUTO
     )
 
     # Función para actualizar configuraciones
@@ -907,4 +915,4 @@ async def main(page: ft.Page):
     )
 
 # Ejecución del Programa
-ft.app(target=main)
+ft.app(target=main, assets_dir="assets")
