@@ -454,7 +454,8 @@ async def main(page: ft.Page):
     #: str: Campo de ingreso de consulta o prompt
     input_prompt = ft.TextField(
         #label="Escribe tu consulta",
-        hint_text="¡Escribe tu consulta!",
+        hint_text="Consultar",
+        prefix_icon=ft.Icons.SEARCH,
         autofocus=True if dr_platform in ["macos","windows", "linux"] else None # No olvidar que la coma la colocaremos al inicio de la siguiente línea.
         ,expand=True,
         min_lines=1,
@@ -462,7 +463,7 @@ async def main(page: ft.Page):
         multiline=not config["usar_enter"],
         on_submit=enviar_prompt,
         shift_enter=True,
-        content_padding = ft.padding.all(30),
+        content_padding = ft.padding.symmetric(horizontal = 20, vertical = 20),
         text_size=18,
         border_width=0,
         border_radius=ft.border_radius.all(40),
@@ -533,7 +534,7 @@ async def main(page: ft.Page):
 
 
     acercade = ft.Markdown(
-        acerca.de,
+        acerca.filosofia,
         extension_set=EXTENSION_SET,
         code_theme=CODE_THEME,
         selectable = True,
@@ -543,7 +544,7 @@ async def main(page: ft.Page):
 
 
     ref_row_acerca_aviso = ft.Ref[ft.Row]()
-    acerca_aviso = get_aviso(ref_row_acerca_aviso)
+    acerca_aviso = get_aviso_acerca(ref_row_acerca_aviso, acerca.resumen)
 
 
     # panel configuración modelos
@@ -776,7 +777,7 @@ async def main(page: ft.Page):
             )
 
     btn_nuevo_chat = get_icon_boton_prompt(
-            ft.Icons.CHAT,
+            ft.Icons.WECHAT,
             'green400',
             'Nuevo Chat',
             '+Chat',on_resetear_campos

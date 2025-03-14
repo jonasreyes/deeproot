@@ -1,6 +1,7 @@
 import flet as ft
 from flet import Ref, Container,Markdown, Row, CircleAvatar, Icon, Icons, MainAxisAlignment
 from modules.themes import Color, ThemeLight, ThemeDark
+from pathlib import Path
 
 def get_icon_boton_prompt(icon,icon_color,tooltip,text,funcion):
     boton=ft.Column(
@@ -38,8 +39,93 @@ def get_platform(e, APP_NAME, APP_LEMA):
 
     return e.platform.value
 
+
+def get_aviso_acerca(referencia, resumen):
+
+    ruta_actual = Path(__file__).parent 
+    ruta_imagen_deeproot = ruta_actual / "assets" / "img" / "deeproot.png"
+    ruta_imagen_deep = ruta_actual / "assets" / "img" / "deep.jpg"
+
+    return ft.Row(
+        ref=referencia,
+        controls=[
+            ft.Column(
+                controls=[
+                    # Containers anidados y con estilo
+                    ft.Container(
+                        ft.Container(
+                            ft.Stack(
+                                [
+                                    #Imágen de Fondo
+                                    ft.Image(
+                                        src=str(ruta_imagen_deep),
+                                        width=360,
+                                        height=260,
+                                        fit=ft.ImageFit.COVER,
+                                        border_radius=11,
+                                    ),
+                                    ft.Container(
+                                        ft.Container(
+                                            ft.Column(
+                                                [
+                                                    ft.Container(
+                                                        ft.Image(
+                                                            src=str(ruta_imagen_deeproot),
+                                                            width=50,
+                                                        ), padding=ft.padding.only(160),
+                                                    ),
+                                                    ft.Text(
+                                                        "Acerca de",
+                                                        width=360,
+                                                        text_align="center",
+                                                        weight="w900",
+                                                        size=20
+                                                    ),
+                                                    ft.Text(
+                                                        # Resumen de DeepRoot
+                                                        resumen,
+                                                        width=360,
+                                                        size=14,
+
+                                                    ),
+
+                                                ], expand=True, alignment = ft.MainAxisAlignment.CENTER,
+                                            ),
+                                        ),
+                                        border_radius=11,
+                                        width=360,
+                                        height=260,
+                                        bgcolor="#22ffffff",
+                                        gradient = ft.LinearGradient([Color.AzulEgipcio,Color.AzulMincyt]),
+                                    ),
+                                ]
+                            ),
+                            padding=20,
+                            width = 360,
+                            height = 560,
+                        ),
+                        width=400,
+                        height=360,
+                        #gradient = ft.LinearGradient([Color.AzulEgipcio,Color.AzulMincyt]),
+                        expand = True
+                    )
+
+                            ],
+                            alignment = ft.MainAxisAlignment.CENTER,
+                            horizontal_alignment = ft.CrossAxisAlignment.CENTER,
+                            expand = True
+                        )
+                    ],
+                    expand=True,
+                    alignment = ft.MainAxisAlignment.CENTER,
+                )
+
+
 def get_aviso(referencia):
     
+    ruta_actual = Path(__file__).parent 
+    ruta_imagen_deeproot = ruta_actual / "assets" / "img" / "deeproot.png"
+
     return ft.Row(
         ref=referencia,
         controls=[
@@ -72,7 +158,7 @@ def get_aviso(referencia):
                                                 [
                                                     ft.Container(
                                                         ft.Image(
-                                                            src="assets/img/deep.jpg",
+                                                            src=str(ruta_imagen_deeproot),
                                                             width=100,
                                                         ), padding=ft.padding.only(130),
                                                     ),
