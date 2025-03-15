@@ -254,8 +254,7 @@ async def main(page: ft.Page):
         prompt = input_prompt.value.strip()
         if not prompt:
             plataforma_actual=page.platform.value
-            page.open(ft.SnackBar(ft.Text(f"Ejecutandose en plataforma: {plataforma_actual}"), bgcolor=tm.Color.AzulEgipcio))
-            #page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=tm.Color.RojoFuturo))
+            page.open(ft.SnackBar(ft.Text("Por favor, escribe una consulta."), bgcolor=tm.Color.RojoFuturo))
             input_prompt.focus()
             page.update()
             return
@@ -403,6 +402,82 @@ async def main(page: ft.Page):
             page.open(ft.SnackBar(ft.Text(f"Error inesperado: {str(e)}"), bgcolor=tm.Color.RojoFuturo))
             page.update()
 
+
+    # max_tokens # max_tokens ## max_tokens # max_tokens ## max_tokens # max_tokens ## max_tokens # max_tokens #
+    # Variable para mostrar el valor actual de max_tokens
+    text_max_tokens = ft.Text(f"Máximo de Tokens (max_tokens): {config['max_tokens']}")
+    
+    # Función para manejar el cambio en el slider de max_tokens
+    def max_tokens_changed(e):
+        new_value = round(e.control.value)
+        
+        # Aseguramos que el valor mínimo sea 1
+        if new_value < 1:
+            page.open(ft.SnackBar(
+                ft.Text("El valor mínimo del máximo de tokens (max_tokens) es 1. Por favor ingrese un número mayor."),
+                bgcolor=tm.Color.RojoFuturo
+            ))
+        else:
+            # Ajustar el valor a múltiplos de 128, excepto si es 1
+            if new_value > 1:
+                new_value = (new_value // 128) * 128
+                if new_value < 1:
+                    new_value = 1
+            
+            config["max_tokens"] = new_value
+            text_max_tokens.value = f"Máximo de Tokens (max_tokens): {new_value}"
+        
+        page.update()
+    
+    # Función para generar el control de configuración de max_tokens
+    def get_max_tokens():
+        return ft.Column(
+            controls=[
+                ft.Divider(),
+                ft.Text("Configure el Máximo de Tokens", size=16, weight="W900"),
+                text_max_tokens,
+                ft.Slider(
+                    min=1,  # Evitar valores inválidos desde el inicio
+                    max=8192,
+                    divisions=64,  # Aumentar divisiones para mayor precisión
+                    value=config["max_tokens"],
+                    #label="{value} Tokens",
+                    on_change=max_tokens_changed
+                ),
+            ],
+        )
+
+
+    # Variable para mostrar el valor actual de temperatura
+    text_temperatura = ft.Text(f"Temperatura del Modelo ({config["modelo"]}): {config['temperature']}")
+    
+    # Función para manejar el cambio en el slider de temperatura
+    def temperatura_changed(e):
+        new_temperature = round(e.control.value, 1)
+        config["temperature"] = new_temperature
+        text_temperatura.value = f"Temperatura del Modelo ({config["modelo"]}): {new_temperature}"
+        
+        page.update()
+    
+    # Función para generar el control de configuración de temperatura
+    def get_temperatura():
+        return ft.Column(
+            controls=[
+                ft.Divider(),
+                ft.Text(f"Configurar Temperatura del Modelo {config["modelo"]}", size=16, weight="W900"),
+                text_temperatura,
+                ft.Slider(
+                    min=0,  # Evitar valores inválidos desde el inicio
+                    max=2,
+                    divisions=200,
+                    value=round(config["temperature"], 1),
+                    label="{value}",
+                    on_change=temperatura_changed,
+                ),
+            ],
+        )
+
+
     btn_ir_al_final = ft.FloatingActionButton(
         #text = "⬇",
         icon=Icons.KEYBOARD_DOUBLE_ARROW_DOWN_ROUNDED,
@@ -484,17 +559,25 @@ async def main(page: ft.Page):
             ft.dropdown.Option("deepseek-coder"),
             ft.dropdown.Option("deepseek-reasoner"),
         ],
-        on_change=lambda e: actualizar_configuracion("modelo", e.control.value)
+        on_change=lambda e: actualizar_configuracion("modelo", e.control.value),
+        
     )
 
     # Campos de configuración
     # str: Campo para depositar el string o token api key de deepseek
-    campo_api_key = ft.TextField(label="API Key",
-                                 value=config["api_key"],
-                                 password=True,
-                                 can_reveal_password=True)
+    campo_api_key = ft.TextField(
+        label="API Key",
+        value=config["api_key"],
+        password=True,
+        bgcolor= lambda e: tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
+        can_reveal_password=True
+    )
     # str: Campo en el que debe colocarse la dirección del servidor con el model IA a acceder por API
-    campo_url_base = ft.TextField(label="URL Base", value=config["url_base"])
+    campo_url_base = ft.TextField(
+        label="URL Base", 
+        value=config["url_base"],
+        bgcolor= lambda e: tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
+    )
 
     # Función Guardar Configuración Avanzada
     def guardar_configuracion_avanzada(e):
@@ -524,8 +607,26 @@ async def main(page: ft.Page):
             ft.Text("Token de Acceso al Servicio API", size=16, weight=ft.FontWeight.BOLD),
             campo_api_key,
             campo_url_base,
+            btn_guardar_conf
+        ],
+        spacing=10,
+        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
+    )
+
+    # Slider para configurar max_tokens
+    campo_max_tokens = get_max_tokens()
+
+    # Slider para configurar la temperatura del modelo
+    campo_temperatura = get_temperatura()
+
+
+    # espacio configuración API
+    tab_config_modelo = ft.Column(
+        [
             ft.Text("Seleccione un Modelo:", size=16, weight=ft.FontWeight.BOLD),
             lista_modelos,
+            campo_max_tokens,
+            campo_temperatura,
             btn_guardar_conf
         ],
         spacing=10,
@@ -886,7 +987,8 @@ async def main(page: ft.Page):
             tabs=[
                 ft.Tab(text="Chat", content=tab_chat),
                 ft.Tab(text="Interfáz", content=tab_interfaz),
-                ft.Tab(text="Configuración API", content=tab_api),
+                ft.Tab(text="Acceso API", content=tab_api),
+                ft.Tab(text="Configuración Modelo", content=tab_config_modelo),
                 ft.Tab(text="Acerca de", content=tab_acerca),
             ],
         ),

@@ -35,5 +35,13 @@ instrucciones = [
     {
       "role": "system",
       "content": "Siempre que la información pueda ser mejor comprendida mediante gráficas, genera representaciones en texto utilizando caracteres como `█`, `●`, `─`, etc. Aplica este método cuando el usuario use el comando `graficar: [datos]` o cuando detectes que una gráfica sería útil para clarificar la información. Asegúrate de que las gráficas sean claras, proporcionales y acompañadas de una breve explicación."
+    },
+    {
+      "role": "system",
+      "content": "Para formatear texto en Telegram, sigue estas pautas: 1) Usa asteriscos (*) para negritas, guiones bajos (_) para cursivas y tildes inversas (`) para código. 2) No uses '---' para separadores, en su lugar usa líneas en blanco. 3) No uses '#' para títulos, en su lugar usa negritas. 4) Usa emojis moderadamente para mejorar la claridad. 5) Asegúrate de que las tablas y listas estén bien alineadas y sean fáciles de leer."
+    },
+    {
+      "role": "system",
+      "content": "La configuración del máximo de tokens (max_tokens) debe realizarse en la pestaña 'Configuración Modelo' de DeepRoot. Las pestañas de DeepRoot son (de izquierda a derecha): 1. Chat: contiene el área de visibilización de burbujas de consultas del usuario y respuestas de la IA, el campo Prompt para enviar consultas y una fila de botones para funciones asociadas al campo del prompt y la manipulación de la conversación. 2. Interfaz: incluye un Control Switch para habilitar/deshabilitar el envío del prompt con la tecla 'Enter'. 3. Acceso API: tiene campos para especificar la api_key y la base_url. 4. Configuración Modelo: contiene una lista desplegable con los modelos deepseek-chat, deepseek-coder y deepseek-reasoner (funcionalidad parcial hasta la próxima versión), un slider para configurar max_tokens, un slider para la temperatura y un campo no editable con el valor actual de Stream (verdadero o falso). 5. Acerca de: muestra información resumen de DeepRoot y su filosofía."
     }
 ]
