@@ -70,7 +70,7 @@ def cargar_configuracion():
         "url_base": "",
         "stream": True,
         "max_tokens": 8192, # por defecto usa 4096, otros números: 2048, 1024, 512
-        "temperature":0 
+        "temperature":0.0 
     }
 
 # Guardar configuración
@@ -102,6 +102,10 @@ max_scroll_extent = 0
 contador_chunk = 0 # Contador para actualizar cada N Chunks
 contador_burbuja = 0 # Contador para poder generar un Key a cada burbuja y posiblemente también una referencia única.
 frecuencia_actualizacion_cr = 5 # Actualizar cada 5 chunks
+
+# ajustes / personalización del modelo IA
+#
+
 
 async def main(page: ft.Page):
 
@@ -448,6 +452,60 @@ async def main(page: ft.Page):
         )
 
 
+    # referencia de la data table
+    ref_col_guia_temperatura = ft.Ref[ft.DataTable]()
+
+    # Tabla de configuración de Temperatura
+    col_guia_temperatura = ft.Column([
+        ft.Text("Guía de Temperaturas en IA por Actividad", size=16, weight="W900"),
+        ft.Container(
+        content = ft.DataTable(
+                ref=ref_col_guia_temperatura,
+            columns =[
+                ft.DataColumn(ft.Text("CASO DE USO")),
+                ft.DataColumn(ft.Text("TEMPERATURA")),
+            ],
+            rows=[
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text("Programación / Matemáticas")),
+                        ft.DataCell(ft.Text("0.0", text_align=ft.TextAlign.CENTER)),
+                    ]
+                ),
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text("Limpieza de Datos / Análisis de Datos")),
+                        ft.DataCell(ft.Text("1.0")),
+                    ]
+                ),
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text("Conversación General")),
+                        ft.DataCell(ft.Text("1.3")),
+                    ]
+                ),
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text("Traducción")),
+                        ft.DataCell(ft.Text("1.3")),
+                    ]
+                ),
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text("Escritura Creativa")),
+                        ft.DataCell(ft.Text("1.5")),
+                    ]
+                ),
+            ],
+            heading_row_color=tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
+            heading_row_height=40,
+        ),
+        #border=ft.border.all(1, "black"),  # Borde de la tabla
+        border_radius=10,  # Bordes redondeados
+    )
+    ])
+
+
     # Variable para mostrar el valor actual de temperatura
     text_temperatura = ft.Text(f"Temperatura del Modelo ({config["modelo"]}): {config['temperature']}")
     
@@ -464,13 +522,15 @@ async def main(page: ft.Page):
         return ft.Column(
             controls=[
                 ft.Divider(),
+                col_guia_temperatura,
+                ft.Divider(), 
                 ft.Text(f"Configurar Temperatura del Modelo {config["modelo"]}", size=16, weight="W900"),
                 text_temperatura,
                 ft.Slider(
                     min=0,  # Evitar valores inválidos desde el inicio
                     max=2,
-                    divisions=200,
-                    value=round(config["temperature"], 1),
+                    divisions=20,
+                    value=str(config["temperature"]),
                     label="{value}",
                     on_change=temperatura_changed,
                 ),
@@ -678,12 +738,14 @@ async def main(page: ft.Page):
             config["theme_mode"] = "ft.ThemeMode.DARK"
             CODE_THEME = CODE_THEME_OSCURO
             theme_mode = "dark"
+            ref_col_guia_temperatura.current.heading_row_color = tm.Color.AzulEgipcio
             print(f"cambiar_theme disparado - Theme Actual: ThemeMode.LIGHT")
         else:
             page.theme_mode = ft.ThemeMode.LIGHT
             config["theme_mode"] = "ft.ThemeMode.LIGHT"
             CODE_THEME = CODE_THEME_CLARO
             theme_mode = "light"
+            ref_col_guia_temperatura.current.heading_row_color = tm.Color.AzulCian
             print(f"cambiar_theme disparado - Theme Actual: ThemeMode.DARK")
             
 
