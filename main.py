@@ -166,6 +166,10 @@ async def main(page: ft.Page):
                           on_click=lambda e: cambiar_theme(),
                           tooltip="Cambiar Tema"
                           ),
+            ft.IconButton(ft.Icons.CLOSE if page.theme_mode == ft.ThemeMode.LIGHT else ft.Icons.CLOSE,
+                          on_click=lambda e: on_cerrar_click(e),
+                          tooltip="Cerrar DeepRoot"
+                          ),
         ]
     )
     page.appbar = barra_app
@@ -979,7 +983,6 @@ async def main(page: ft.Page):
                 btn_compartir_chat,
                 btn_descargar_chat,
                 btn_reset_prompt,
-                btn_cerrar
             ], 
             spacing=4,
             alignment=ft.MainAxisAlignment.CENTER,
@@ -994,7 +997,6 @@ async def main(page: ft.Page):
                 btn_copiar_resp,
                 btn_compartir_chat,
                 btn_reset_prompt,
-                btn_cerrar
             ], 
             spacing=4,
             alignment=ft.MainAxisAlignment.CENTER,
