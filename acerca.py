@@ -1,17 +1,11 @@
 resumen="""
- DeepRoot, Ver 0.1.0
- Autor: Jonás Antonio Reyes Casanova (jonasroot)
- Actualización: 12-MAR-2025
+DeepRoot, Ver 0.1.0 (Marzo 2025) GNU/GPL v3.0.
 
-Descripción:
 Cliente de Modelos Avanzados de Inteligencia Artificial (LLM) Licenciados en Software Libre y de Código Abierto.
-Modelos Soportados: DeepSeek - Chat, DeepSeek Coder y DeepSeek Reasoner (en desarrollo)
-
 Licencia: GNU GPL v3.0.
 
-Contacto:
-- Canal de Telegram: https://t.me/s/jonasroot (comenta una publicación)
-- Repositorio: https://github.com/jonasreyes/deeproot.git
+- Telegram: t.me/s/DeepRoot_app
+- GitHub: https://github.com/jonasreyes/deeproot.git
 
 #PatriaYSoftwareLibre
 """

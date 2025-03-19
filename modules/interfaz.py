@@ -42,9 +42,8 @@ def get_platform(e, APP_NAME, APP_LEMA):
 
 def get_aviso_acerca(referencia, resumen):
 
-    ruta_actual = Path(__file__).parent 
-    ruta_imagen_deeproot = ruta_actual / "assets" / "img" / "deeproot.png"
-    ruta_imagen_deep = ruta_actual / "assets" / "img" / "deep.jpg"
+    ruta_imagen_deeproot = "images/deeproot.png"
+    ruta_imagen_deep = "images/deep.jpg"
 
     return ft.Row(
         ref=referencia,
@@ -58,9 +57,9 @@ def get_aviso_acerca(referencia, resumen):
                                 [
                                     #Imágen de Fondo
                                     ft.Image(
-                                        src=str(ruta_imagen_deep),
+                                        src=ruta_imagen_deep,
                                         width=360,
-                                        height=260,
+                                        height=360,
                                         fit=ft.ImageFit.COVER,
                                         border_radius=11,
                                     ),
@@ -68,33 +67,40 @@ def get_aviso_acerca(referencia, resumen):
                                         ft.Container(
                                             ft.Column(
                                                 [
-                                                    ft.Container(
-                                                        ft.Image(
-                                                            src=str(ruta_imagen_deeproot),
-                                                            width=50,
-                                                        ), padding=ft.padding.only(160),
-                                                    ),
+                                                    #ft.Container(
+                                                    #    ft.Image(
+                                                    #        src=ruta_imagen_deeproot,
+                                                    #        width=60,
+                                                    #    ), padding=ft.padding.only(110),
+                                                    #),
                                                     ft.Text(
                                                         "Acerca de",
                                                         width=360,
                                                         text_align="center",
                                                         weight="w900",
-                                                        size=20
+                                                        size=20,
+                                                        color=ft.Colors.WHITE,
                                                     ),
-                                                    ft.Text(
-                                                        # Resumen de DeepRoot
-                                                        resumen,
-                                                        width=360,
-                                                        size=14,
-
+                                                    ft.Container(
+                                                        ft.Text(
+                                                            # Resumen de DeepRoot
+                                                            resumen,
+                                                            width=360,
+                                                            size=13,
+                                                            color=ft.Colors.WHITE,
+                                                        ),
+                                                        padding=ft.padding.all(20),
                                                     ),
 
-                                                ], expand=True, alignment = ft.MainAxisAlignment.CENTER,
+                                                ], 
+                                                expand=True, 
+                                                alignment = ft.MainAxisAlignment.CENTER,
+                                                horizontal_alignment=ft.CrossAxisAlignment.CENTER
                                             ),
                                         ),
                                         border_radius=11,
                                         width=360,
-                                        height=260,
+                                        height=360,
                                         bgcolor="#22ffffff",
                                         gradient = ft.LinearGradient([Color.AzulEgipcio,Color.AzulMincyt]),
                                     ),
@@ -105,7 +111,7 @@ def get_aviso_acerca(referencia, resumen):
                             height = 560,
                         ),
                         width=400,
-                        height=360,
+                        height=400,
                         #gradient = ft.LinearGradient([Color.AzulEgipcio,Color.AzulMincyt]),
                         expand = True
                     )
@@ -123,8 +129,8 @@ def get_aviso_acerca(referencia, resumen):
 
 def get_aviso(referencia):
     
-    ruta_actual = Path(__file__).parent 
-    ruta_imagen_deeproot = ruta_actual / "assets" / "img" / "deeproot.png"
+    ruta_imagen_deeproot = "images/deeproot.png"
+    ruta_imagen_deep = "images/deep.jpg"
 
     return ft.Row(
         ref=referencia,
@@ -136,14 +142,6 @@ def get_aviso(referencia):
                         ft.Container(
                             ft.Stack(
                                 [
-                                    # Imágen de Fondo
-                                    #ft.Image(
-                                    #    src="./img/deep.jpg",
-                                    #    width=360,
-                                    #    height=260,
-                                    #    fit=ft.ImageFit.COVER,
-                                    #    border_radius=11,
-                                    #),
                                     ft.Container(
                                         border_radius=11,
                                         rotate=ft.Rotate(0.98*3.14),
