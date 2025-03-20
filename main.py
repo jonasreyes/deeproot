@@ -373,7 +373,7 @@ async def main(page: ft.Page):
                     contador_chunk += 1 # Se incrementará el contador
                     print(f"Chunk: {contador_chunk} - {chunk_texto} | ")
 
-                    if contador_chunk % 5 == 0:
+                    if contador_chunk % 2 == 0:
                         # Si el usuario no está manejando el scroll, desplazamos automáticamente
                         # gestión usable del Scroll
                         if not usuario_manejo_scroll:
