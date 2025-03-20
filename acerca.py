@@ -12,7 +12,7 @@ Licencia: GNU GPL v3.0.
 
 filosofia="""
 
-# Fisosofía de DeepRoot
+# Filosofía de DeepRoot
 ---
 **"La verdadera inteligencia no solo resuelve problemas, sino que cultiva la vida..."**
 

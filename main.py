@@ -453,6 +453,7 @@ async def main(page: ft.Page):
                     on_change=max_tokens_changed
                 ),
             ],
+            horizontal_alignment = ft.CrossAxisAlignment.CENTER
         )
 
 
@@ -504,10 +505,10 @@ async def main(page: ft.Page):
             heading_row_color=tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
             heading_row_height=40,
         ),
-        #border=ft.border.all(1, "black"),  # Borde de la tabla
         border_radius=10,  # Bordes redondeados
     )
-    ])
+    ], horizontal_alignment = ft.CrossAxisAlignment.CENTER
+                                     )
 
 
     # Variable para mostrar el valor actual de temperatura
@@ -539,6 +540,7 @@ async def main(page: ft.Page):
                     on_change=temperatura_changed,
                 ),
             ],
+            horizontal_alignment = ft.CrossAxisAlignment.CENTER
         )
 
 
@@ -687,14 +689,15 @@ async def main(page: ft.Page):
     # espacio configuración API
     tab_config_modelo = ft.Column(
         [
-            ft.Text("Seleccione un Modelo:", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("Seleccione un Modelo:", size=16, weight=ft.FontWeight.W_900),
             lista_modelos,
             campo_max_tokens,
             campo_temperatura,
             btn_guardar_conf
         ],
         spacing=10,
-        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
+        scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
     )
 
 

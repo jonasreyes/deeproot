@@ -63,16 +63,17 @@ def get_aviso_acerca(referencia, resumen):
                                         fit=ft.ImageFit.COVER,
                                         border_radius=11,
                                     ),
+                                    # Capa semitransparente
+                                    ft.Container(
+                                        width=360,
+                                        height=360,
+                                        bgcolor="#22ffffff",
+                                        border_radius=11
+                                    ),
                                     ft.Container(
                                         ft.Container(
                                             ft.Column(
                                                 [
-                                                    #ft.Container(
-                                                    #    ft.Image(
-                                                    #        src=ruta_imagen_deeproot,
-                                                    #        width=60,
-                                                    #    ), padding=ft.padding.only(110),
-                                                    #),
                                                     ft.Text(
                                                         "Acerca de",
                                                         width=360,
@@ -89,7 +90,7 @@ def get_aviso_acerca(referencia, resumen):
                                                             size=13,
                                                             color=ft.Colors.WHITE,
                                                         ),
-                                                        padding=ft.padding.all(20),
+                                                        padding=ft.padding.only(left=20, right=20),
                                                     ),
 
                                                 ], 
