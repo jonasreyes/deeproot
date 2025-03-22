@@ -172,7 +172,7 @@ async def main(page: ft.Page):
 
     # Componentes de la interfáz
     barra_app = ft.AppBar(
-        title=ft.Text(APP_NAME, size=22, color="#FFFFFF", weight=ft.FontWeight.W_900),
+        title=ft.Text(APP_NAME, size=22, color=tm.Color.BeigeFuturo, weight=ft.FontWeight.W_900),
         bgcolor=tm.Color.AzulMincyt, # Azul Mincyt
         actions=[
             ft.IconButton(ft.Icons.BRIGHTNESS_4 if page.theme_mode == ft.ThemeMode.LIGHT else ft.Icons.BRIGHTNESS_7,
@@ -426,7 +426,7 @@ async def main(page: ft.Page):
 
     # max_tokens # max_tokens ## max_tokens # max_tokens ## max_tokens # max_tokens ## max_tokens # max_tokens #
     # Variable para mostrar el valor actual de max_tokens
-    text_max_tokens = ft.Text(f"Máximo de Tokens (max_tokens): {config['max_tokens']}")
+    text_max_tokens = ft.Text(f"{config['max_tokens']} Tokens", size=20, weight="W900")
     
     # Función para manejar el cambio en el slider de max_tokens
     def max_tokens_changed(e):
@@ -446,7 +446,7 @@ async def main(page: ft.Page):
                     new_value = 1
             
             config["max_tokens"] = new_value
-            text_max_tokens.value = f"Máximo de Tokens (max_tokens): {new_value}"
+            text_max_tokens.value = f"{new_value} Tokens"
         
         page.update()
     
@@ -525,13 +525,13 @@ async def main(page: ft.Page):
 
 
     # Variable para mostrar el valor actual de temperatura
-    text_temperatura = ft.Text(f"Temperatura del Modelo ({config["modelo"]}): {config['temperature']}")
+    text_temperatura = ft.Text(f"Temperatura: {config['temperature']}", size=20, weight="W900")
     
     # Función para manejar el cambio en el slider de temperatura
     def temperatura_changed(e):
         new_temperature = round(e.control.value, 1)
         config["temperature"] = new_temperature
-        text_temperatura.value = f"Temperatura del Modelo ({config["modelo"]}): {new_temperature}"
+        text_temperatura.value = f"Temperatura: {new_temperature}"
         
         page.update()
     
