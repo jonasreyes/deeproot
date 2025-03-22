@@ -1,0 +1,47 @@
+# Licencia de Software Libre de DeepRoot
+(Adaptada de la Licencia de la Fundación CENDITEL)
+1. Objeto
+
+Esta licencia regula el uso, copia, modificación y distribución del software DeepRoot, garantizando su libertad y promoviendo su desarrollo como bien común.
+2. Libertades garantizadas
+
+    Uso: Puedes usar DeepRoot para cualquier propósito legal.
+
+    Copia: Puedes hacer copias exactas del software.
+
+    Modificación: Puedes modificar el código fuente para adaptarlo a tus necesidades.
+
+    Distribución: Puedes distribuir DeepRoot y sus obras derivadas, siempre que respetes esta licencia.
+
+3. Condiciones para la distribución y modificación
+
+    Debes incluir esta licencia en todas las copias o modificaciones.
+
+    Si distribuyes una versión modificada, debes:
+
+        Indicar los cambios realizados.
+
+        Mantener el código fuente accesible.
+
+        Preservar los derechos morales del autor original.
+
+4. Compatibilidad con la GNU GPL
+
+Esta licencia es compatible con la GNU General Public License (GPL). Puedes combinar DeepRoot con software bajo GNU GPL, siempre que respetes los términos de ambas licencias. Las obras derivadas deben licenciarse bajo los términos de esta licencia o de la GNU GPL, según corresponda.
+5. Prohibiciones
+
+    No puedes cobrar por el software en sí, aunque sí por servicios relacionados (soporte, distribución física, etc.).
+
+    No puedes aplicar medidas tecnológicas que restrinjan el uso, copia o modificación de DeepRoot.
+
+    No puedes patentar DeepRoot ni ninguna de sus partes.
+
+6. Sin garantía
+
+DeepRoot se proporciona "tal cual", sin garantías de ningún tipo. El autor no será responsable por daños derivados de su uso.
+7. Aceptación
+
+Al usar, modificar o distribuir DeepRoot, aceptas los términos de esta licencia.
+8. Resolución de conflictos
+
+Cualquier disputa relacionada con esta licencia se resolverá bajo la legislación de la República Bolivariana de Venezuela.
