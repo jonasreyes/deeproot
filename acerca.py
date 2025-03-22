@@ -22,4 +22,11 @@ Nuestra doctrina es clara: **compartir el conocimiento y reproducir la vida resp
 
 La ciencia, la tecnología y la innovación deben ser descolonizadas, no para negar su potencial, sino para redirigirlo hacia la vida y la dignidad. Tenemos la oportunidad de construir un futuro donde el conocimiento no sea un privilegio, sino un derecho; donde la tecnología no sea un instrumento de control, sino una herramienta de liberación. Este es el camino que elegimos: uno que honre la tierra, respete las diferencias y asegure que nadie quede atrás. **Porque la verdadera inteligencia no solo resuelve problemas, sino que cultiva la vida en todas sus formas.**
 
+# Agradecimientos:
+---
+- Al Programa de Formación de Grado Informática para la Gestión Social (PFG-IPGS) de la Universidad Bolivariana de Venezuela (UC. Seguridad Informática, Prof. Rafael Fabra)
+- Al Despacho del Viceministro para el Desarrollo de las Tecnologías de la Información y la Comunicación (DVDTIC) del Ministerio del Poder Popular para Ciencia y Tecnología por la realización del curso teórico práctico de Inteligencia Artificial **“Machine Learning y Deep Learning”** (Dictado por el Profesor Ronald Delgado, Coordinador de Ciencia de Datos e Inteligencia Artificial de la Unidad de Transformación Digital (UTD)).
+- Al Centro Nacional de Tecnologías de la Información (CNTI) desde su presidente Ing. Rafael David Arismendi hasta cada uno de sus trabajadores, en especial al equipo de la Gerencia de Tecnología y Operaciones con Heiser Díaz al frente y todo el equipo de desarrollo de Canaima GNU/Linux con Angel Marrero al frente. Su humildad es tan grande como el amor a la Patria.
+- A Anunciación Perafán, Ricardo Bolívar, Marly Estanga y Daniel Espinoza, pilares históricos y abnegados trabajadores comunitarios que dieron sentido al Proyecto Infocentro desde la comunidad del Guarataro, lugar donde tantos niños encontraron refugio contra la violencia en el primer infocentro comunitario del país.
+- A la Juventud Trabajadora, frecuentemente invisibilizada y que sigue siendo profundamente transformadora de la realidad Venezolana.
 """
