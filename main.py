@@ -29,6 +29,8 @@ import flet as ft
 import asyncio
 import json
 import os
+import platform
+import shutil
 import modules.themes as themes
 import acerca
 from modules.interfaz import *
@@ -51,7 +53,12 @@ def get_hoy(para_ia=True):
     return fecha_de_hoy
 
 # ARCHIVO DE CONFIGURACIÓN
-CONFIG_FILE = "deeproot.json"
+# creamos directorio de configuración
+config_dir = os.path.join(os.path.expanduser("~"), ".config", "deeproot")
+os.makedirs(config_dir, exist_ok=True)
+
+# Si no existe el archivo de configuración de deeproot lo creamos.
+CONFIG_FILE = os.path.join(config_dir,"deeproot.json")
 
 # Carga de configuración inicial desde archivo
 def cargar_configuracion():
