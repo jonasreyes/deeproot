@@ -111,6 +111,8 @@ CODE_THEME = CODE_THEME_CLARO
 
 # Otras Variables Globales
 usuario_manejo_scroll = False
+auto_scroll_activo = True
+
 max_scroll_extent = 0
 contador_chunk = 0 # Contador para actualizar cada N Chunks
 contador_burbuja = 0 # Contador para poder generar un Key a cada burbuja y posiblemente también una referencia única.
@@ -139,15 +141,65 @@ async def main(page: ft.Page):
     # Gestión del Scroll - dándole usabilidad
 
     def on_scroll(e: ft.OnScrollEvent):
-        global usuario_manejo_scroll
-        usuario_manejo_scroll = e.pixels != e.max_scroll_extent # Si el usuario no está en el final del scroll, se detiene el auto_scroll.
+        global auto_scroll_activo
 
-        print(f"\ndirection: {e.direction}, pixels: {e.pixels}, overscroll: {e.overscroll}")
+        if e.event_type == "user":
+            auto_scroll_activo = False
+            campo_respuesta.auto_scroll = False
+            btn_ir_al_inicio.visible = True
+            btn_ir_al_final.visible = True
+            btn_scroll_mover_manual.visible = True
+            btn_scroll_reactivar.visible = True
+            #print("Auto-scroll desactivada (usuario interactuando.)")
 
-        # Mostramos/ecultamos botones según la posición del scroll.
-        btn_ir_al_final.visible = usuario_manejo_scroll # Aparece si el usuario no está en el final.
-        btn_ir_al_inicio.visible = e.pixels > 200 # solo aparece si hay mensajes previos
+        elif e.pixels == e.max_scroll_extent:
+            auto_scroll_activo = True
+            campo_respuesta.auto_scroll = True
+            btn_ir_al_inicio.visible = False
+            btn_ir_al_final.visible = False
+            btn_scroll_mover_manual.visible = True
+            btn_scroll_reactivar.visible = True
+            #print("Auto-scroll reactivado (usuario en el final)")
+
         page.update()
+
+    async def actualizar_interfaz():
+        if auto_scroll_activo:
+            campo_respuesta.scroll_to(offset=-1)
+        page.update()
+        await asyncio.sleep(0)
+
+    def reactivar_auto_scroll(e):
+        global auto_scroll_activo
+        auto_scroll_activo = True
+        campo_respuesta.auto_scroll = True
+        campo_respuesta.scroll_to(offset=-1)
+        # Actualización de visibilidad de botones scroll
+        btn_ir_al_inicio.visible = False
+        btn_ir_al_final.visible = False
+        btn_scroll_mover_manual.visible = True
+        btn_scroll_reactivar = False
+        page.update()
+        #print("Auto-scroll reactivado manualmente.")
+
+    def mover_scroll_manual(e):
+        global auto_scroll_activo
+
+        # Desactivamos auto_scroll antes de usar scroll_to
+        auto_scroll_activo = False
+        campo_respuesta.auto_scroll = False
+
+        # Actualización de visibilidad de botones scroll
+        btn_ir_al_inicio.visible = True
+        btn_ir_al_final.visible = True
+        btn_scroll_mover_manual.visible = False
+        btn_scroll_reactivar = True
+        # movemos manualmente el scroll
+        campo_respuesta.scroll_to(offset=500) # mover a 500 px
+        page.update()
+        #print("Scroll movido manualmente a 500 pixeles.")
+
+
 
 
     # creamos una referencia a todos los elementos markdown.
@@ -217,6 +269,13 @@ async def main(page: ft.Page):
     fecha_de_hoy = get_hoy()
     historial_conversacion = instrucciones.instrucciones
 
+    # Función de limpieza del historial
+    def limpiar_historial():
+        if len(historial_conversacion) > 50: # Limpiaremos los 10 primeros mensajes después de las instrucciones, siempre que hayan mas de 50 mensajes en historial
+            for _ in range(10):
+                historial_conversacion.pop(30)
+            page.open(ft.SnackBar(ft.Text("Se han eliminado automáticamente los 10 mensajes más antiguos del historial."), bgcolor=tm.Color.TeMincyt))
+
     # referencia para scroll de respuesta
     # refactorizar próximamente
     campo_respuesta_ref = ft.Ref[ft.ListView]()
@@ -230,7 +289,7 @@ async def main(page: ft.Page):
         expand=True,
         spacing=10,
         on_scroll=on_scroll,
-        auto_scroll = False
+        auto_scroll = True
     )
 
     # Función Actualizar Markdown
@@ -263,8 +322,6 @@ async def main(page: ft.Page):
     async def enviar_prompt(e):
         """Envía la consulta del usuario y gestiona la conversación."""
 
-        global usuario_manejo_scroll, max_scroll_extent
-
         # Verificamos que la app está configurada con un token de la API
         if not config["api_key"]:
             page.open(ft.SnackBar(ft.Text("Error: API Key no configurada."), bgcolor=tm.Color.RojoFuturo))
@@ -296,10 +353,7 @@ async def main(page: ft.Page):
         input_prompt.value = ""
 
         # gestión usable del Scroll
-        if not usuario_manejo_scroll:
-            page.update()
-            campo_respuesta.scroll_to(offset=1, duration=500)
-        page.update()
+        await actualizar_interfaz()
         await asyncio.sleep(0)
 
         # evitar que el input_prompt vuelva a tener foco automatico en huespedes móviles, ya que activa el teclado en pantalla y es molesto.
@@ -321,7 +375,7 @@ async def main(page: ft.Page):
     async def get_respuesta_ia(page, prompt, campo_respuesta):
         """Genera la respuesta de la IA."""
 
-        global usuario_manejo_scroll, contador_chunk
+        global contador_chunk, usuario_manejo_scroll
 
         try:
             client = openai.OpenAI(api_key=config["api_key"], base_url=config["url_base"])
@@ -340,16 +394,8 @@ async def main(page: ft.Page):
             # Añadimos el avatar y la barra de progreso al campo_respuesta
 
             campo_respuesta.controls.append(indicador_de_carga)
-            if not usuario_manejo_scroll:
-                page.update()
-                campo_respuesta.scroll_to(offset=1, duration=500)
             page.update()
             await asyncio.sleep(0)
-
-
-
-        #    campo_respuesta.update() # actualizamos la interfáz para que sea el indicador_de_carga
-        #    await asyncio.sleep(0) # damos tiempo pequeño para que pueda actualizarse la interfáz.
 
             # preparamos la burbuja de mensaje vacía para luego añadir la respuesta de la IA.
             respuesta_ia_burbuja = burbuja_mensaje("", es_usuario=False)
@@ -357,16 +403,9 @@ async def main(page: ft.Page):
 
             # Añadimos a campo_respuesta la burbuja para la respuesta de la IA, se cargará asícronamente.
             campo_respuesta.controls.append(respuesta_ia_burbuja)
-            # gestión usable del Scroll
-            if not usuario_manejo_scroll:
-                page.update()
-                campo_respuesta.scroll_to(offset=1, duration=500)
             page.update()
             await asyncio.sleep(0)
-            #campo_respuesta.update() # actualizamos campo_respuesta para que se refleje respuesta_ia_burbuja
-            #await asyncio.sleep(0) # pequeña pausa para acutaliaar UI antes de esperar a la API
 
-            # Establecemos un tiempo máximo de espera para la respuesta de la API
             # Obtenemos la respuesta de la IA en streaming
             respuesta = client.chat.completions.create(
                 model=config["modelo"],
@@ -386,27 +425,25 @@ async def main(page: ft.Page):
                     contador_chunk += 1 # Se incrementará el contador
                     print(f"Chunk: {contador_chunk} - {chunk_texto} | ")
 
-                    if contador_chunk % 2 == 0:
+                    if contador_chunk % 5 == 0:
                         # Si el usuario no está manejando el scroll, desplazamos automáticamente
                         # gestión usable del Scroll
-                        if not usuario_manejo_scroll:
-                            page.update()
-                            campo_respuesta.scroll_to(offset=1, duration=500)
-                        page.update()
-                        await asyncio.sleep(0)
+                        if auto_scroll_activo:
+                            campo_respuesta.auto_scroll = True
+                        await actualizar_interfaz()
 
 
             # Nos aseguramos de actualizar al final si el últim batch no se mostró.
             if contador_chunk % 5 != 0:
-                #campo_respuesta.update()
                 page.update()
             # Si la app se ejecuta un SO de escritorio devolveremos el foco luego de haber recibido respuesta.
             input_prompt.focus() if dr_platform in ["macos","windows", "linux"] else None
 
             # antes del cierre del ciclo, unimos la respuesta de la ia al historial
             historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
+            limpiar_historial()
 
-            print(f"Plataforma actual: {dr_platform}")
+            await actualizar_interfaz()
             # retornamos respuesta en limpio, que no se usará por ahora, pero que puede servir más adelante.
             return respuesta_temporal_para_historial[0]
 
@@ -559,6 +596,7 @@ async def main(page: ft.Page):
 
     btn_ir_al_final = ft.FloatingActionButton(
         #text = "⬇",
+        tooltip="Ir al final del Scroll",
         icon=Icons.KEYBOARD_DOUBLE_ARROW_DOWN_ROUNDED,
         on_click = lambda e: ir_al_final(),
         visible = False,
@@ -567,8 +605,27 @@ async def main(page: ft.Page):
 
     btn_ir_al_inicio = ft.FloatingActionButton(
         #text = "⬆",
+        tooltip="Ir al incio del Scroll",
         icon=Icons.KEYBOARD_DOUBLE_ARROW_UP_ROUNDED,
         on_click = lambda e: ir_al_inicio(),
+        visible = False,
+        bgcolor = ft.Colors.with_opacity(0.4, ft.Colors.WHITE)
+    )
+
+    btn_scroll_reactivar = ft.FloatingActionButton(
+        #text = "⬆",
+        tooltip = "Reactivar Scroll-Automático",
+        icon=Icons.PLAY_CIRCLE_OUTLINED,
+        on_click = reactivar_auto_scroll,
+        visible = False,
+        bgcolor = ft.Colors.with_opacity(0.4, ft.Colors.WHITE)
+    )
+
+    btn_scroll_mover_manual = ft.FloatingActionButton(
+        #text = "⬆",
+        tooltip = "Activar Scroll Manual",
+        icon=Icons.WAVING_HAND_OUTLINED,
+        on_click = mover_scroll_manual,
         visible = False,
         bgcolor = ft.Colors.with_opacity(0.4, ft.Colors.WHITE)
     )
@@ -576,7 +633,9 @@ async def main(page: ft.Page):
     def ensamblar_campo_respuesta():
         stack = ft.Stack([
             campo_respuesta,  # Chat (se mantiene en el fondo)
-            ft.Container(btn_ir_al_inicio,right=40,bottom=0, width=30, height=30),
+            ft.Container(btn_scroll_reactivar,right=40,bottom=40, width=30, height=30),
+            ft.Container(btn_ir_al_inicio,right=0,bottom=80, width=30, height=30),
+            ft.Container(btn_scroll_mover_manual,right=0,bottom=40, width=30, height=30),
             ft.Container(btn_ir_al_final,right=0,bottom=0, width=30, height=30),
         ], expand=True)
 
@@ -584,12 +643,12 @@ async def main(page: ft.Page):
 
     def ir_al_final():
         """Forzamos el scroll hasta el final"""
-        campo_respuesta.scroll_to(offset=-1, duration=500)
+        campo_respuesta.scroll_to(offset=-1, duration=300)
         page.update()
 
     def ir_al_inicio():
         """Forzamos el scroll hasta el inicio"""
-        campo_respuesta.scroll_to(offset=0, duration=500)
+        campo_respuesta.scroll_to(offset=0, duration=300)
         page.update()
 
     # Alternativa para usar enter
@@ -955,7 +1014,7 @@ async def main(page: ft.Page):
     btn_reset_prompt = get_icon_boton_prompt(
             ft.Icons.DELETE_FOREVER_ROUNDED,
             tm.Color.NaranjaMincyt,
-            'Copiar Prompt',
+            'Borrar prompt',
             'Borrar',reset_prompt
             )
 
