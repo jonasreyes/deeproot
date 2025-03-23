@@ -364,12 +364,6 @@ async def main(page: ft.Page):
         resp = await get_respuesta_ia(page, prompt, campo_respuesta)
         page.update()
 
-
-
-    # get_respuesta_ia ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # get_respuesta_ia ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # get_respuesta_ia ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # get_respuesta_ia ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # get_respuesta_ia ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # Inicializando cliente OpenAI
     async def get_respuesta_ia(page, prompt, campo_respuesta):
@@ -423,7 +417,7 @@ async def main(page: ft.Page):
                     respuesta_temporal_para_historial[0] += chunk_texto
 
                     contador_chunk += 1 # Se incrementará el contador
-                    print(f"Chunk: {contador_chunk} - {chunk_texto} | ")
+                    #print(f"Chunk: {contador_chunk} - {chunk_texto} | ")
 
                     if contador_chunk % 5 == 0:
                         # Si el usuario no está manejando el scroll, desplazamos automáticamente
@@ -818,14 +812,14 @@ async def main(page: ft.Page):
             CODE_THEME = CODE_THEME_OSCURO
             theme_mode = "dark"
             ref_col_guia_temperatura.current.heading_row_color = tm.Color.AzulEgipcio
-            print(f"cambiar_theme disparado - Theme Actual: ThemeMode.LIGHT")
+            #print(f"cambiar_theme disparado - Theme Actual: ThemeMode.LIGHT")
         else:
             page.theme_mode = ft.ThemeMode.LIGHT
             config["theme_mode"] = "ft.ThemeMode.LIGHT"
             CODE_THEME = CODE_THEME_CLARO
             theme_mode = "light"
             ref_col_guia_temperatura.current.heading_row_color = tm.Color.AzulCian
-            print(f"cambiar_theme disparado - Theme Actual: ThemeMode.DARK")
+            #print(f"cambiar_theme disparado - Theme Actual: ThemeMode.DARK")
             
 
         #actualizar_markdown_ref(ref_md_burbuja_ia,CODE_THEME)
