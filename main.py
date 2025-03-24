@@ -407,7 +407,6 @@ async def main(page: ft.Page):
             historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
             limpiar_historial()
 
-            #await actualizar_interfaz()
             # retornamos respuesta en limpio, que no se usará por ahora, pero que puede servir más adelante.
             return respuesta_temporal_para_historial[0]
 
