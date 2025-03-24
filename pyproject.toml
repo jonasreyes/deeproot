@@ -1,0 +1,24 @@
+[project]
+name = "DeepRoot"
+version = "0.1.0"
+description = "Cliente de Modelos Avanzados LLM para GNU/Linux"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Jonás Antonio Reyes Casanova", email = "jonasreyes@yandex.com" }
+]
+dependencies = [
+  "flet",
+  "openai",
+  "asyncio",
+  "markdown"
+]
+
+[tool.flet]
+org = "com.jonasroot"
+product = "DeepRoot"
+company = "JonasRoot"
+copyright = "Copyright (C) 2025 por JonasRoot"
+
+[tool.flet.app]
+path = "src"
