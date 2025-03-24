@@ -293,9 +293,6 @@ async def main(page: ft.Page):
 
 
     # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # enviar_prompt :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # Enviando consulta de usuarios a la API IA
     async def enviar_prompt(e):
         """Envía la consulta del usuario y gestiona la conversación."""
@@ -329,10 +326,8 @@ async def main(page: ft.Page):
         respuesta_temprana=burbuja_mensaje(prompt,es_usuario=True)
         campo_respuesta.controls.append(respuesta_temprana)
         input_prompt.value = ""
+        input_prompt.disabled = True
 
-        # gestión usable del Scroll
-        await actualizar_interfaz()
-        await asyncio.sleep(0)
 
         # evitar que el input_prompt vuelva a tener foco automatico en huespedes móviles, ya que activa el teclado en pantalla y es molesto.
         # en un dipositivo móvil el foco siempre está al alcance de los dedos, por eso el autofoco solo debe ser para huespedes de escritorio.
@@ -340,7 +335,6 @@ async def main(page: ft.Page):
 
         # conectamos 
         resp = await get_respuesta_ia(page, prompt, campo_respuesta)
-        page.update()
 
     # get_respuesta_ia ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
     # Inicializando cliente OpenAI
@@ -395,8 +389,6 @@ async def main(page: ft.Page):
                     respuesta_temporal_para_historial[0] += chunk_texto
 
                     contador_chunk += 1 # Se incrementará el contador
-                    #print(f"Chunk: {contador_chunk} - {chunk_texto} | ")
-
                     if contador_chunk % 5 == 0:
                         # Si el usuario no está manejando el scroll, desplazamos automáticamente
                         # gestión usable del Scroll
@@ -404,18 +396,18 @@ async def main(page: ft.Page):
                             campo_respuesta.auto_scroll = True
                         await actualizar_interfaz()
 
-
             # Nos aseguramos de actualizar al final si el últim batch no se mostró.
             if contador_chunk % 5 != 0:
                 page.update()
             # Si la app se ejecuta un SO de escritorio devolveremos el foco luego de haber recibido respuesta.
+            input_prompt.disabled = False # habilitar y deshabilitar el prompt genera el inconveniente de la perdida del foco, pero evita el envío de nuevas consultas antes de recibir la respuesta.
             input_prompt.focus() if dr_platform in ["macos","windows", "linux"] else None
 
             # antes del cierre del ciclo, unimos la respuesta de la ia al historial
             historial_conversacion.append({"role": "assistant", "content": respuesta_temporal_para_historial[0]})
             limpiar_historial()
 
-            await actualizar_interfaz()
+            #await actualizar_interfaz()
             # retornamos respuesta en limpio, que no se usará por ahora, pero que puede servir más adelante.
             return respuesta_temporal_para_historial[0]
 
