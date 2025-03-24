@@ -110,18 +110,12 @@ CODE_THEME_OSCURO = config["code_theme_oscuro"]
 CODE_THEME = CODE_THEME_CLARO
 
 # Otras Variables Globales
-usuario_manejo_scroll = False
 auto_scroll_activo = True
 
-max_scroll_extent = 0
-contador_chunk = 0 # Contador para actualizar cada N Chunks
-contador_burbuja = 0 # Contador para poder generar un Key a cada burbuja y posiblemente también una referencia única.
-frecuencia_actualizacion_cr = 5 # Actualizar cada 5 chunks
+# Contador para actualizar cada N Chunks
+contador_chunk = 0 
 
 # ajustes / personalización del modelo IA
-#
-
-
 async def main(page: ft.Page):
 
     gc = GestorConversacion(page)
@@ -175,12 +169,11 @@ async def main(page: ft.Page):
         campo_respuesta.auto_scroll = True
         campo_respuesta.scroll_to(offset=-1)
         # Actualización de visibilidad de botones scroll
-        btn_ir_al_inicio.visible = False
-        btn_ir_al_final.visible = False
+        #btn_ir_al_inicio.visible = False
+        #btn_ir_al_final.visible = False
         btn_scroll_mover_manual.visible = True
         btn_scroll_reactivar = False
         page.update()
-        #print("Auto-scroll reactivado manualmente.")
 
     def mover_scroll_manual(e):
         global auto_scroll_activo
@@ -190,25 +183,19 @@ async def main(page: ft.Page):
         campo_respuesta.auto_scroll = False
 
         # Actualización de visibilidad de botones scroll
-        btn_ir_al_inicio.visible = True
-        btn_ir_al_final.visible = True
+        #btn_ir_al_inicio.visible = True
+        #btn_ir_al_final.visible = True
         btn_scroll_mover_manual.visible = False
         btn_scroll_reactivar = True
         # movemos manualmente el scroll
         campo_respuesta.scroll_to(offset=500) # mover a 500 px
         page.update()
-        #print("Scroll movido manualmente a 500 pixeles.")
-
-
-
 
     # creamos una referencia a todos los elementos markdown.
     ref_cont_burbuja_usuario = ft.Ref[ft.Container]()
     ref_cont_burbuja_ia = ft.Ref[ft.Container]()
     ref_md_burbuja_ia = ft.Ref[ft.Markdown]()
     ref_md_acerca = ft.Ref[ft.Markdown]()
-    # creamos una referencia a todos los elementos markdown.
-    ref_md_ia = ft.Ref[ft.Markdown]()
 
     # en futura actualización facilitaré la personalización completa del theme.
     page.theme = ft.Theme(
@@ -253,15 +240,6 @@ async def main(page: ft.Page):
     )
     page.bottom_appbar = barra_app
 
-    # Respuestas - EXPERIMENTAL
-    # Respuesta que devuelve la IA
-#    respuesta_prompt_md = ft.Text(
-#        "Bienvenido a DeepRoot Cliente API de DeepSeek AI", 
-#        weight=ft.FontWeight.W_800, 
-#        size=16, 
-#        text_align=ft.TextAlign.CENTER, 
-#        selectable=True
-#    )
     ref_row_aviso = ft.Ref[ft.Row]()
     contenedor_respuesta_prompt_md = get_aviso(ref_row_aviso)
 
@@ -627,10 +605,10 @@ async def main(page: ft.Page):
     def ensamblar_campo_respuesta():
         stack = ft.Stack([
             campo_respuesta,  # Chat (se mantiene en el fondo)
-            ft.Container(btn_scroll_reactivar,right=40,bottom=40, width=30, height=30),
-            ft.Container(btn_ir_al_inicio,right=0,bottom=80, width=30, height=30),
-            ft.Container(btn_scroll_mover_manual,right=0,bottom=40, width=30, height=30),
-            ft.Container(btn_ir_al_final,right=0,bottom=0, width=30, height=30),
+            ft.Container(btn_scroll_reactivar,right=50,bottom=0, width=30, height=30),
+            #ft.Container(btn_ir_al_inicio,right=0,bottom=80, width=30, height=30),
+            ft.Container(btn_scroll_mover_manual,right=10,bottom=0, width=30, height=30),
+            #ft.Container(btn_ir_al_final,right=0,bottom=0, width=30, height=30),
         ], expand=True)
 
         return stack
@@ -1086,20 +1064,10 @@ async def main(page: ft.Page):
         page.update()
 
     respuesta_area = ensamblar_campo_respuesta()
-  #  respuesta_area = ft.Column(
-  #      controls=[
-  #          campo_respuesta,
-  #      ],
-  #      expand=True,  # Ocupa el espacio vertical disponible
-  #      alignment=ft.MainAxisAlignment.END,
-  #      horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
-  #  )
 
     container_panel_respuesta = ft.Container(
         content=respuesta_area,
         padding=20,
-        #border=ft.border.all(1, ft.Colors.GREY_300),
-        #border_radius=10,
         expand=True,
     )
 
@@ -1128,22 +1096,11 @@ async def main(page: ft.Page):
         expand=True,
     )
 
-    panel_prompt = ft.Column(
-        [
-            fila_prompt,
-            fila_prompt_botones
-        ],
-        alignment=ft.MainAxisAlignment.END
-    )
-
-
-
     # Agregamos componentes a la página
     page.add(
         ft.Column(
             controls=[
                 container_panel_configuracion,
-                #panel_prompt
             ],
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             expand=True,
