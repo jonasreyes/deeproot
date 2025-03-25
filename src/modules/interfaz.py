@@ -1,3 +1,5 @@
+import os
+import platform
 import flet as ft
 from flet import Ref, Container,Markdown, Row, CircleAvatar, Icon, Icons, MainAxisAlignment
 from modules.themes import Color, ThemeLight, ThemeDark
@@ -39,6 +41,16 @@ def get_platform(e, APP_NAME, APP_LEMA):
 
     return e.platform.value
 
+def get_directorio_configuracion():
+    sistema = platform.system()
+    if sistema == "Linux" and "ANDROID_ARGUMENT" in os.environ:
+        return "./config"
+    elif sistema == "Darwin":
+        return os.path.join(os.path.expanduser("~"), "Library", "Application Support", "deeproot")
+    elif sistema == "Windows":
+        return os.path.join(os.environ["APPDATA"],"deeproot")
+    else:
+        return os.path.join(os.path.expanduser("~"), ".config", "deeproot")
 
 def get_aviso_acerca(referencia, resumen):
 

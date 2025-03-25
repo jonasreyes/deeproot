@@ -60,8 +60,13 @@ def get_hoy(para_ia=True):
 
 # ARCHIVO DE CONFIGURACIÓN
 # creamos directorio de configuración
-config_dir = os.path.join(os.path.expanduser("~"), ".config", "deeproot")
-os.makedirs(config_dir, exist_ok=True)
+
+sistema = platform.system()
+if sistema == "Linux" and "ANDROID_ARGUMENT" in os.environ:
+    config_dir = "./config/"
+else:
+    config_dir = get_directorio_configuracion()
+    os.makedirs(config_dir, exist_ok=True)
 
 # Si no existe el archivo de configuración de deeproot lo creamos.
 CONFIG_FILE = os.path.join(config_dir,"deeproot.json")
@@ -116,7 +121,7 @@ auto_scroll_activo = True
 contador_chunk = 0 
 
 # ajustes / personalización del modelo IA
-async def main(page: ft.Page):
+async def main(page):
 
     gc = GestorConversacion(page)
 

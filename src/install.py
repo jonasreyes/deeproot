@@ -36,7 +36,7 @@ if platform.system() != "Linux":
 # Creamos el lanzador (archivo .desktop)
 desktop_content = f"""[Desktop Entry]
 Name=DeepRoot
-Exec={os.path.abspath(".venv/bin/python3")} {os.path.abspath("main.py")}
+Exec={os.path.abspath("../.venv/bin/python")} {os.path.abspath("main.py")}
 Icon={os.path.abspath("assets/images/deeproot.png")}
 Type=Application
 Categories=Utility;Application;

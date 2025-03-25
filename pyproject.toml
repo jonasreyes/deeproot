@@ -20,5 +20,10 @@ product = "DeepRoot"
 company = "JonasRoot"
 copyright = "Copyright (C) 2025 por JonasRoot"
 
+[tool.flet.android]
+dependencies = [
+"pyjnius"
+]
+
 [tool.flet.app]
 path = "src"
