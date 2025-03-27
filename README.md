@@ -39,7 +39,7 @@
 
 ---
 
-## 🚀 Características Principales  
+## 🚀 Características  
 
 ### 🔍 Multi-Modelos  
 - Soporte para **deepseek-chat**, **deepseek-coder** y **deepseek-reasoner** (ampliaremos progresivamente la lista de modelos) 
