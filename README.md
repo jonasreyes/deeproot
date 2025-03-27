@@ -1,5 +1,5 @@
 # 🌊 DeepRoot - Cliente API para IA Libre  
-[![Licencia](https://img.shields.io/badge/Licencia-DeepRoot_LSS-blue)](LICENSE.md)
+[![Licencia](https://img.shields.io/badge/Licencia-DeepRoot_LSS-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
 
 **Cliente Modelos Avanzados IA (LLM) Licenciados en Software Libre y/o Código Abierto.**  
@@ -146,7 +146,7 @@ curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/uninstall.s
 ---
 
 ## 📜 Licencia  
-DeepRoot se distribuye bajo la [Licencia DeepRoot](LICENSE.md), compatible con GPL.  
+DeepRoot se distribuye bajo la [Licencia DeepRoot](LICENSE), compatible con GPL.  
 
 ---
 
