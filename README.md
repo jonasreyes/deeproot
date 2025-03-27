@@ -1,37 +1,69 @@
-DeepRoot es software libre bajo los términos de la [Licencia de Software Libre de DeepRoot](LICENSE).  
-Puedes usar, copiar, modificar y distribuir este software, siempre que cumplas con los términos de la licencia.  
-Para más detalles, consulta el archivo [LICENSE](LICENSE) en este repositorio.
+# 🌊 DeepRoot - Cliente API para IA Libre  
+[![Licencia](https://img.shields.io/badge/Licencia-DeepRoot_LSS-blue)](LICENSE.md)
+![Python](https://img.shields.io/badge/Python-3.8%2B-green)
 
-
-
-```markdown
-# 🌊 DeepRoot - Cliente API para DeepSeek  
-
-*Cliente Modelos Avanzados IA (LLM) Licenciados en Software Libre y/o Código Abierto.*  
+**Cliente Modelos Avanzados IA (LLM) Licenciados en Software Libre y/o Código Abierto.**  
 *Actualmente compatible con los Modelos de DeepSeek vía API [Plataforma DeepSeek API](https://platform.deepseek.com/)*  
 
-![DeepRoot Logo](https://raw.githubusercontent.com/jonasreyes/deeproot/main/src/assets/images/deeproot.png)  
-*Logo oficial de DeepRoot*  
+![Logo de DeepRoot](src/assets/images/deeproot.png)  
+*Ballena de DeepRoot - Símbolo de conocimiento profundo*  
 
-## 🚀 Características  
-- ✅ Interfaz intuitiva para modelos DeepSeek (Chat, Coder, Reasoner).  
-- 🔄 Configuración personalizable (API Key, modelos, temas).  
-- 📂 Exporta conversaciones en Markdown/HTML.  
-- 🐧 Compatible con Canaima GNU/Linux, Debian, Arch y más.  
+---
+
+## 📌 Tabla de Contenidos
+1. [Filosofía](#-filosofía)
+2. [Características](#-características)
+3. [Instalación](#-instalación)
+4. [Uso Avanzado](#-uso-avanzado)
+5. [Contribuir](#-contribuir)
+6. [Licencia](#-licencia)
+
+---
+
+## 🌍 Filosofía / Philosophy / 哲学 / Философия / الفلسفة  
+
+### Español (Original)  
+**DeepRoot** nace en Venezuela para democratizar la IA, combinando tecnología avanzada con principios de software libre y justicia social. Inspirado en la resiliencia de comunidades como El Guarataro, busca ser herramienta para la emancipación tecnológica.  
+
+### English  
+**DeepRoot**, developed in Venezuela, merges cutting-edge AI with free software ideals. It’s a tool for social transformation, inspired by grassroots movements and licensed for collective empowerment.  
+
+### 中文 (Chinese)  
+**DeepRoot** 诞生于委内瑞拉，结合自由软件与人工智能，致力于技术民主化。受社区韧性启发，遵循开放共享原则，赋能社会变革。  
+
+### Русский (Russian)  
+**DeepRoot** — венесуэльский проект, объединяющий ИИ и свободное ПО для социальных изменений. Лицензия гарантирует свободу использования и модификации.  
+
+### العربية (Arabic)  
+**ديبروت** أداة ذكاء اصطناعي حُرّة من فنزويلا، مصممة لتمكين المجتمعات عبر 
+
+---
+
+## 🚀 Características Principales  
+
+### 🔍 Multi-Modelos  
+- Soporte para **deepseek-chat**, **deepseek-coder** y **deepseek-reasoner** (ampliaremos progresivamente la lista de modelos) 
+- Configuración dinámica de parámetros (tokens, temperatura)  
+
+### 🎨 Personalización  
+- Temas claros/oscuros (`gruvbox`)  
+- Sintaxis de código resaltada  
+
+### 📤 Exportación  
+- Conversaciones en **Markdown** y **HTML**  
+- Compatibilidad con **Obsidian** y **Telegram**  
 
 ---
 
 ## 📥 Instalación  
 
-### 🔧 Requisitos  
+### Requisitos  
 - **Python 3.8+**  
+- **Zenity**  
 - **Git** (opcional)  
-- **pip** actualizado  
+- **pip** (actualizado)
 
-### 🛠️ Métodos de Instalación  
-
-#### 1. Instalación Automática (Recomendada)  
-Ejecuta en tu terminal:  
+### 1. Método Automático  
 ```bash
 curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/install.sh | bash
 ```
@@ -43,7 +75,7 @@ cd deeproot
 python3 -m venv .venv
 source .venv/bin/activate  # Canaima/Zsh: usa `. .venv/bin/activate`
 pip install -r requirements.txt  # Instala dependencias
-cd src && python install.py && cd ..  # Genera lanzador
+cd src && python generar_lanzador.py && cd ..  # Genera lanzador
 ```
 
 ---
@@ -86,14 +118,30 @@ curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/uninstall.s
 ## 📦 Soporte para Distros  
 | Distribución       | Comandos de Instalación       |  
 |--------------------|-------------------------------|  
-| **Canaima/Debian** | `sudo apt install python3-venv git` |  
-| **Arch Linux**     | `sudo pacman -S python git`   |  
-| **Fedora**         | `sudo dnf install python3-virtualenv git` |  
+| **Canaima/Debian** | `sudo apt install python3-venv git zenity` |  
+| **Arch Linux**     | `sudo pacman -S python git zenity`   |  
+| **Fedora**         | `sudo dnf install python3-virtualenv git zenity` |  
+
+---
+
+## 🛠 Uso Avanzado
+*Opciones disponibles:*
+- `--model`: Selecciona entre las versiones más recientes de los modelos de DeepSeek (se irán sumando otros modelos).
+- `--max-tokens`: Controla la longitud de respuestas.
+- `--temperature`: Ajusta la creatividad (0.0 a 2.0)
 
 ---
 
 ## 🐛 Reportar Problemas  
-¿Encontraste un error? ¡Abre un [issue en GitHub](https://github.com/jonasreyes/deeproot/issues)!  
+¿Encontraste un error? ¡Abre un [issue en GitHub](https://github.com/jonasreyes/deeproot/issues)! 
+
+---
+
+## 🤝 Contribuir
+1. Haz fork del repositorio
+2. Crea una rama (`git checkout -b feature/nueva-funcion`)
+3. Envía un Pull Request
+ 
 
 ---
 
@@ -108,20 +156,11 @@ DeepRoot se distribuye bajo la [Licencia DeepRoot](LICENSE.md), compatible con G
 - **Repositorio**: [github.com/jonasreyes/deeproot](https://github.com/jonasreyes/deeproot)  
 
 *¡Gracias por usar DeepRoot!* 🐋💙  
-```
 
 ---
 
-### 🔍 Notas Clave  
-1. **Imagen del Logo**: Asegúrate de que la ruta `src/assets/images/deeproot.png` exista en tu repositorio.  
-2. **Requisitos**: El archivo `requirements.txt` debe incluir:  
-   ```plaintext
-   flet==0.27
-   openai
-   markdown
-   asyncio
-   ```  
-3. **Aliases**: Se añaden automáticamente durante la instalación (ver scripts anteriores).  
+*¿Más ayuda? Contacta a [@jonasroot](https://t.me/jonasroot)*
 
-¿Necesitas ajustar algo más? 😊
+## 🐧 Recomendado para Canaima GNU/Linux
 
+---
