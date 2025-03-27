@@ -15,29 +15,32 @@ else
     exit 1
 fi
 
-# Clonar repositorio
-if [ ! -d "deeproot" ]; then
-    echo "📂 Seleccione la ruta de instalación (deje vacío para usar $(pwd)):"
-    read -r install_path
-    
-    # Usar ruta actual si no se especifica
-    if [ -z "$install_path" ]; then
-        install_path="$(pwd)"
-    else
-        # Crear directorio si no existe
-        mkdir -p "$install_path"
-    fi
+# Ruta por defecto: /home/usuario/apps/deeproot
+DEFAULT_INSTALL_DIR="$HOME/apps"
 
+echo "📂 Seleccione la ruta de instalación (deje vacío para usar '$DEFAULT_INSTALL_DIR'):"
+read -r install_path
+
+# Usar ruta por defecto si no se especifica
+if [ -z "$install_path" ]; then
+    install_path="$DEFAULT_INSTALL_DIR"
+fi
+
+# Crear directorio si no existe
+mkdir -p "$install_path"
+
+# Clonar repositorio
+if [ ! -d "$install_path/deeproot" ]; then
     git clone https://github.com/jonasreyes/deeproot.git "$install_path/deeproot"
     cd "$install_path/deeproot" || exit
 else
-    cd deeproot || exit
+    cd "$install_path/deeproot" || exit
     git pull
 fi
 
 # Configurar ruta absoluta
 DEEP_ROOT_DIR="$(pwd)"
-export DEEP_ROOT_INSTALL_DIR="$DEEP_ROOT_DIR"  # Exportar para uso inmediato
+export DEEP_ROOT_INSTALL_DIR="$DEEP_ROOT_DIR"
 
 # Entorno virtual
 python3 -m venv .venv
@@ -50,15 +53,16 @@ pip install flet==0.27 openai asyncio markdown
 # Generar lanzador en el menú
 cd src && python generar_lanzador.py && cd ..
 
-# ===== Añadir aliases a .bashrc y .zshrc =====
+# ===== Añadir aliases =====
 add_alias() {
     local shell_rc=$1
     if [ -f "$HOME/${shell_rc}" ]; then
         if ! grep -q "alias deeproot=" "$HOME/${shell_rc}"; then
-            echo "# Alias para DeepRoot" >> "$HOME/${shell_rc}"
+            echo "" >> "$HOME/${shell_rc}"
+            echo "# Configuración para DeepRoot" >> "$HOME/${shell_rc}"
             echo "alias deeproot='cd \"$DEEP_ROOT_DIR\" && . .venv/bin/activate && python src/main.py'" >> "$HOME/${shell_rc}"
-            echo "alias uninstall-deeproot='DEEP_ROOT_INSTALL_DIR=\"$DEEP_ROOT_DIR\" && sh \"$DEEP_ROOT_DIR\"/uninstall.sh'" >> "$HOME/${shell_rc}"
-            echo "export DEEP_ROOT_INSTALL_DIR=\"$DEEP_ROOT_DIR\"" >> "$HOME/${shell_rc}"  # Persistencia en shell
+            echo "alias uninstall-deeproot='sh \"$DEEP_ROOT_DIR\"/uninstall.sh'" >> "$HOME/${shell_rc}"  # Eliminado DEEP_ROOT_INSTALL_DIR redundante
+            echo "export DEEP_ROOT_INSTALL_DIR=\"$DEEP_ROOT_DIR\"" >> "$HOME/${shell_rc}"
             echo "✔ Alias añadido a ${shell_rc}"
         else
             echo "ℹ️ Los aliases ya existen en ${shell_rc}"
@@ -75,8 +79,7 @@ if [ -f "$HOME/.profile" ] && ! grep -q "DEEP_ROOT_INSTALL_DIR" "$HOME/.profile"
 fi
 
 echo "✅ ¡DeepRoot instalado correctamente!"
-echo "📌 Ahora puedes ejecutarlo desde cualquier terminal con:"
-echo "   deeproot"
-echo "   uninstall-deeproot  # Para desinstalar"
-echo ""
-echo "📍 Ruta de instalación: $DEEP_ROOT_DIR"
+echo "📌 Ejecuta:"
+echo "   deeproot       # Iniciar"
+echo "   uninstall-deeproot  # Desinstalar (solo borrará '$DEEP_ROOT_DIR')"
+echo "📍 Ruta: $DEEP_ROOT_DIR"
