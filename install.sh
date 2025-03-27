@@ -28,7 +28,7 @@ if [ ! -d "deeproot" ]; then
         mkdir -p "$install_path"
     fi
 
-    git clone ~/repositorios/deeproot.git "$install_path/deeproot"
+    git clone https://github.com/jonasreyes/deeproot.git "$install_path/deeproot"
     cd "$install_path/deeproot" || exit
 else
     cd deeproot || exit
