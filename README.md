@@ -20,7 +20,8 @@
 
 ---
 
-## 🌍 Filosofía / Philosophy / 哲学 / Философия / الفلسفة  
+## 🌍 Filosofía
+### Philosophy / 哲学 / Философия / الفلسفة  
 
 ### Español (Original)  
 **DeepRoot** nace en Venezuela para democratizar la IA, combinando tecnología avanzada con principios de software libre y justicia social. Inspirado en la resiliencia de comunidades como El Guarataro, busca ser herramienta para la emancipación tecnológica.  
