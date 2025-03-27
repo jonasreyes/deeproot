@@ -57,8 +57,7 @@ fi
 # 5. Eliminar directorio de instalación (con confirmación)
 if [ -d "$INSTALL_DIR" ]; then
     echo ""
-    echo "⚠ ¿Deseas eliminar el directorio de instalación completo? [y/N]"
-    echo "⚠ Directorio: $INSTALL_DIR"
+    echo "⚠ ¿Deseas eliminar por completo el directorio de instalación ($INSTALL_DIR)? [y/N]"
     read -r response
     if [[ "$response" =~ ^[yY] ]]; then
         echo "✔ Eliminando $INSTALL_DIR..."
