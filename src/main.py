@@ -15,8 +15,7 @@ Descripción:
 Esta aplicación es un cliente de escritorio y móvil para facilitar el acceso y disfrute del Servicio API de DeepSeek. Se requiere de un token de DeepSeek Platform para poder funcionar. Es un desarrollo independiente, inspirado en los valores del Software Libre en Venezuela. Es resultado de los incentivos éticos de la Universidad Bolivariana de Venezuela y la Comunidad de Canaima GNU/Linux.
 
 Licencia:
-Este software se distribuye bajo la licencia GNU GPL v3.0.
-Puedes encontrar una copia de la licencia en https://www.gnu.org/licenses/gpl-3.0.html#license-text
+DeepRoot se distribuye bajo la [Licencia DeepRoot](LICENSE.md), compatible con GPL.  
 Este código es libre y debe permanecer así. Si realizas modificaciones o derivados, debes mencionar al autor original (yo) y mantener esta misma licencia.
 
 Contacto:
@@ -829,7 +828,7 @@ async def main(page):
         page.update()  # Actualiza la página para mostrar el SnackBar
 
     # Descarga el chat 
-    def descargar_chat(e:FilePickerResultEvent,path="almacenamiento/"):
+    def descargar_chat(e:FilePickerResultEvent,path="~/"):
         ruta_chat_a_guardar = e.path
         historial_chat = get_chat()
 

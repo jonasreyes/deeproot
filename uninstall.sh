@@ -41,6 +41,7 @@ remove_aliases ".zshrc"
 
 # 5. Opcional: Eliminar directorio de instalación (¡ADVERTENCIA!)
 echo "⚠ ¿Deseas eliminar el directorio de instalación completo? [y/N]"
+echo "⚠  Directorio: $INSTALL_DIR"
 read -r response
 if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
     echo "✔ Eliminando $INSTALL_DIR..."
