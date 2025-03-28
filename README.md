@@ -7,7 +7,15 @@
 
 ![Logo de DeepRoot](src/assets/images/deeproot.png)  
 *Ballena de DeepRoot - Símbolo de conocimiento profundo*  
+---
+## 📹 Demo  
+No te pierdas el video demostrativo de la Instalación de DeepRoot:  
+[![Ver Demo](https://img.shields.io/badge/▶-Ver_Video_Demo-red?style=for-the-badge)](https://rutube.ru/video/f59e3cd104a92965b0add83a40c95047/)
 
+### 🎥 ¿Qué verás en el demo?  
+- Instalación de DeepRoot  
+- Configuración inicial  
+- Uso de los modelos de IA  
 ---
 
 ## 📌 Tabla de Contenidos
