@@ -14,8 +14,6 @@ No te pierdas el video demostrativo de la Instalación de DeepRoot:
 
 ### 🎥 ¿Qué verás en el demo?  
 - Instalación de DeepRoot  
-- Configuración inicial  
-- Uso de los modelos de IA  
 ---
 
 ## 📌 Tabla de Contenidos
