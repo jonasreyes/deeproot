@@ -113,6 +113,11 @@ CODE_THEME_CLARO = config["code_theme_claro"]
 CODE_THEME_OSCURO = config["code_theme_oscuro"]
 CODE_THEME = CODE_THEME_CLARO
 
+# Configuración del Historial de conversación
+HISTORIAL_LONGITUD_MAX = 50
+CONVERSACIONES_MAX_A_ELIMINAR = 10
+INSTRUCCIONES_LONGITUD = 30
+
 # Otras Variables Globales
 auto_scroll_activo = True
 
@@ -247,16 +252,18 @@ async def main(page):
     ref_row_aviso = ft.Ref[ft.Row]()
     contenedor_respuesta_prompt_md = get_aviso(ref_row_aviso)
 
-    # arreglo para almacenar conversación (chat co ia)
+    # arreglo para almacenar conversación (chat con la ia)
     fecha_de_hoy = get_hoy()
     historial_conversacion = instrucciones.instrucciones
 
     # Función de limpieza del historial
     def limpiar_historial():
-        if len(historial_conversacion) > 50: # Limpiaremos los 10 primeros mensajes después de las instrucciones, siempre que hayan mas de 50 mensajes en historial
-            for _ in range(10):
-                historial_conversacion.pop(30)
-            page.open(ft.SnackBar(ft.Text("Se han eliminado automáticamente los 10 mensajes más antiguos del historial."), bgcolor=tm.Color.TeMincyt))
+        global HISTORIAL_LONGITUD_MAX,CONVERSACIONES_MAX_A_ELIMINAR, INSTRUCCIONES_LONGITUD
+
+        if len(historial_conversacion) > HISTORIAL_LONGITUD_MAX: # Limpiaremos los 10 primeros mensajes después de las instrucciones, siempre que hayan mas de 50 mensajes en historial
+            for _ in range(CONVERSACIONES_MAX_A_ELIMINAR):
+                historial_conversacion.pop(INSTRUCCIONES_LONGITUD) # Eliminamos desde la posición 30 para evitar borrar las instrucciones iniciales al modelo (user:system) que ocupan los primeros 30 mensajes.
+            page.open(ft.SnackBar(ft.Text(f"Se han eliminado automáticamente los {CONVERSACIONES_MAX_A_ELIMINAR} mensajes más antiguos del historial."), bgcolor=tm.Color.TeMincyt))
 
     # referencia para scroll de respuesta
     # refactorizar próximamente
@@ -663,6 +670,7 @@ async def main(page):
             ft.dropdown.Option("deepseek-chat"),
             ft.dropdown.Option("deepseek-coder"),
             ft.dropdown.Option("deepseek-reasoner"),
+            ft.dropdown.Option("gemini-2.0-flash"),
             #ft.dropdown.Option("qwen/qwen2.5-vl-72b-instruct:free"), # Se deshabilita hasta que concluyan las pruebas con los modelos Qwen.
         ],
         on_change=lambda e: actualizar_configuracion("modelo", e.control.value),
