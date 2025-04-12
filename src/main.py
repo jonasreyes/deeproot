@@ -663,7 +663,7 @@ async def main(page):
             ft.dropdown.Option("deepseek-chat"),
             ft.dropdown.Option("deepseek-coder"),
             ft.dropdown.Option("deepseek-reasoner"),
-            ft.dropdown.Option("qwen/qwen2.5-vl-72b-instruct:free"),
+            #ft.dropdown.Option("qwen/qwen2.5-vl-72b-instruct:free"), # Se deshabilita hasta que concluyan las pruebas con los modelos Qwen.
         ],
         on_change=lambda e: actualizar_configuracion("modelo", e.control.value),
         
