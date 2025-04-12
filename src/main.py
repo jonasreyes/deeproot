@@ -663,6 +663,7 @@ async def main(page):
             ft.dropdown.Option("deepseek-chat"),
             ft.dropdown.Option("deepseek-coder"),
             ft.dropdown.Option("deepseek-reasoner"),
+            ft.dropdown.Option("qwen/qwen2.5-vl-72b-instruct:free"),
         ],
         on_change=lambda e: actualizar_configuracion("modelo", e.control.value),
         
@@ -689,6 +690,7 @@ async def main(page):
         config["api_key"] = campo_api_key.value
         config["url_base"] = campo_url_base.value
         guardar_configuracion(config)
+        input_prompt.disabled = False
         page.open(ft.SnackBar(ft.Text("¡Configuración Guardada!"), bgcolor=tm.Color.TeMincyt))
         page.update()
 
@@ -817,6 +819,7 @@ async def main(page):
     def resetear_campos(e):
         campo_respuesta.controls.clear()
         input_prompt.value = ""
+        input_prompt.disabled = False
         input_prompt.focus()
         page.open(ft.SnackBar(ft.Text("¡Ya puedes empezar una nueva conversación!"), bgcolor=tm.Color.TeMincyt))
         page.update()
