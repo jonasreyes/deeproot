@@ -114,8 +114,8 @@ CODE_THEME_OSCURO = config["code_theme_oscuro"]
 CODE_THEME = CODE_THEME_CLARO
 
 # Configuración del Historial de conversación
-HISTORIAL_LONGITUD_MAX = 50
-CONVERSACIONES_MAX_A_ELIMINAR = 10
+HISTORIAL_LONGITUD_MAX = 100
+CONVERSACIONES_MAX_A_ELIMINAR = 20
 INSTRUCCIONES_LONGITUD = 30
 
 # Otras Variables Globales
@@ -670,7 +670,7 @@ async def main(page):
             ft.dropdown.Option("deepseek-chat"),
             ft.dropdown.Option("deepseek-coder"),
             ft.dropdown.Option("deepseek-reasoner"),
-            ft.dropdown.Option("gemini-2.0-flash"),
+            ft.dropdown.Option("gemini-2.0-flash"), # Usuarios deben obtener su API Key en Google AI Studio: https://aistudio.google.com
             #ft.dropdown.Option("qwen/qwen2.5-vl-72b-instruct:free"), # Se deshabilita hasta que concluyan las pruebas con los modelos Qwen.
         ],
         on_change=lambda e: actualizar_configuracion("modelo", e.control.value),

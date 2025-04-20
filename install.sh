@@ -48,7 +48,7 @@ python3 -m venv .venv
 
 # Instalar dependencias
 pip install --upgrade pip
-pip install flet==0.27 openai asyncio markdown
+pip install 'flet[desktop]==0.27' openai asyncio markdown
 
 # Generar lanzador en el menú
 cd src && python generar_lanzador.py && cd ..
