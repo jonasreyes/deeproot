@@ -1,12 +1,15 @@
-# 🌊 DeepRoot - Cliente API para IA Libre  
+# 🌊 DeepRoot - Una aplicación GUI multimodal diseñada para interactuar con modelos avanzados de IA (LLM) de licencia software libre y código abierto, facilitando el acceso a inteligencia artificial libre, sin censura y altamente personalizable.
 [![Licencia](https://img.shields.io/badge/Licencia-DeepRoot_LSS-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
 
 **Cliente Modelos Avanzados IA (LLM) Licenciados en Software Libre y/o Código Abierto.**  
-*Actualmente compatible con los Modelos de DeepSeek vía API [Plataforma DeepSeek API](https://platform.deepseek.com/)*  
+*Actualmente compatible con los Modelos de DeepSeek y Google Gemini Flash 2.0 vía API.*
+*Obtener API KEY de DeepSeek: [Plataforma DeepSeek](https://platform.deepseek.com/)*  
+*Obtener API KEY de Google Gemini: [Google AI Studio](https://aistudio.google.com)*  
 
 ![Logo de DeepRoot](src/assets/images/deeproot.png)  
-*Ballena de DeepRoot - Símbolo de conocimiento profundo*  
+*Ballena de DeepRoot - Símbolo de raíces profundas*  
+
 ---
 ## 📹 Demo  
 No te pierdas el video demostrativo de la Instalación de DeepRoot:  
@@ -29,7 +32,6 @@ No te pierdas el video demostrativo de la Instalación de DeepRoot:
 ## 🌍 Filosofía
 ### Philosophy / 哲学 / Философия / الفلسفة  
 
-### Español  
 **DeepRoot** nace en Venezuela para democratizar la IA, combinando tecnología avanzada con principios de software libre y justicia social. Inspirado en la resiliencia de comunidades como El Guarataro fundadora del Primer Infocentro Comunitario de Venezuela, busca ser herramienta para la emancipación tecnológica.
 
 ### English  
@@ -49,7 +51,7 @@ No te pierdas el video demostrativo de la Instalación de DeepRoot:
 ## 🚀 Características  
 
 ### 🔍 Multi-Modelos  
-- Soporte para **deepseek-chat**, **deepseek-coder** y **deepseek-reasoner** (ampliaremos progresivamente la lista de modelos) 
+- Soporte para **deepseek-chat**, **deepseek-coder**, **deepseek-reasoner**, **gemini-2.0-flash** (ampliaremos progresivamente la lista de modelos) 
 - Configuración dinámica de parámetros (tokens, temperatura)  
 
 ### 🎨 Personalización  
@@ -66,23 +68,34 @@ No te pierdas el video demostrativo de la Instalación de DeepRoot:
 
 ### Requisitos  
 - **Python 3.8+**  
-- **Zenity**  
-- **Git** (opcional)  
-- **pip** (actualizado)
+- **Zenity** (para diálogos gráficos)  
+- **Git** (opcional, para instalación manual)  
+- **libmpv.so.1** (dependencia de Flet para renderizado multimedia)  
+
+#### 🔧 Solución para `libmpv.so.1` (GNU/Linux)  
+En sistemas donde solo está disponible `libmpv.so.2`, ejecuta:  
+```bash
+sudo ln -s /usr/lib/libmpv.so /usr/lib/libmpv.so.1  # Crea enlace simbólico
+```
+*Más detalles: [Issue #2823 de Flet](https://github.com/flet-dev/flet/issues/2823)*  
+
+> **Nota:** En futuras actualizaciones, esta dependencia se resolverá automáticamente durante la instalación.
+
+---
 
 ### 1. Método Automático  
 ```bash
 curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/install.sh | bash
 ```
 
-#### 2. Instalación Manual  
+### 2. Instalación Manual  
 ```bash
 git clone https://github.com/jonasreyes/deeproot.git
 cd deeproot
 python3 -m venv .venv
 source .venv/bin/activate  # Canaima/Zsh: usa `. .venv/bin/activate`
-pip install -r requirements.txt  # Instala dependencias
-cd src && python generar_lanzador.py && cd ..  # Genera lanzador
+pip install -r requirements.txt
+cd src && python generar_lanzador.py && cd ..
 ```
 
 ---
@@ -123,11 +136,16 @@ curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/uninstall.s
 ---
 
 ## 📦 Soporte para Distros  
-| Distribución       | Comandos de Instalación       |  
-|--------------------|-------------------------------|  
-| **Canaima/Debian** | `sudo apt install python3-venv git zenity` |  
-| **Arch Linux**     | `sudo pacman -S python git zenity`   |  
-| **Fedora**         | `sudo dnf install python3-virtualenv git zenity` |  
+| Distribución       | Comandos de Instalación                    | Notas                                  |     |
+| ------------------ | ------------------------------------------ | -------------------------------------- | --- |
+| **Canaima/Debian** | `sudo apt install python3-venv git zenity` | Ver solución para `libmpv.so.1`        |     |
+| **Arch Linux**     | `sudo pacman -S python git zenity`         | Usa `libmpv.so.2` con enlace simbólico |     |
+| **Fedora**     | `sudo dnf install python3-virtualenv git zenity`         | Usa `libmpv.so.2` con enlace simbólico |     |
+
+---
+
+## 🐧 Recomendado para Canaima GNU/Linux  
+DeepRoot está optimizado para Canaima GNU/Linux (basado en Debian). Descárgalo [aquí](https://canaima.softwarelibre.gob.ve/).  
 
 ---
 
