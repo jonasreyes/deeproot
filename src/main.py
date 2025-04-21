@@ -46,6 +46,7 @@ from flet import FilePicker, FilePickerResultEvent
 import markdown
 from modules import themes as tm
 from modules.interfaz import GestorConversacion
+import subprocess
 
 
 # hora para la IA
@@ -77,6 +78,7 @@ def cargar_configuracion():
             return json.load(f)
     return {
         "usar_enter": False,
+        "usar_carpeta_descarga_predeterminada": True,
         "modelo": "deepseek-chat",
         "theme_mode": "ft.ThemeMode.LIGHT",
         "code_theme": "gruvbox-light",
@@ -118,6 +120,8 @@ HISTORIAL_LONGITUD_MAX = 100
 CONVERSACIONES_MAX_A_ELIMINAR = 20
 INSTRUCCIONES_LONGITUD = 30
 
+# Ruta por defecto almacenamiento historial del chat
+RUTA_ALMACENAMIENTO_CHAT = os.path.join(os.path.expanduser("~"), "Descargas", "deeproot_exportaciones") if os.path.exists("~/Descargas") else os.path.join(os.path.expanduser("~"), "Downloads", "deeproot_exportaciones")
 # Otras Variables Globales
 auto_scroll_activo = True
 
@@ -638,6 +642,15 @@ async def main(page):
             page.open(ft.SnackBar(ft.Text("Desactivada opción de envío de consulta pulsando la tecla 'Enter'. Restablecido el Botón de envío."), bgcolor=tm.Color.TeMincyt))
         page.update()
 
+    def on_usar_carpeta_descarga_predeterminada(e):
+        config["usar_carpeta_descarga_predeterminada"]=switch_usar_carpeta_descarga_predeterminada.value
+        guardar_configuracion(config)
+        if config["usar_carpeta_descarga_predeterminada"]:
+            page.open(ft.SnackBar(ft.Text("DeepRoot usará la carpeta predeterminada para almacenar las conversaciones que descargues."), bgcolor=tm.Color.TeMincyt))
+        else:
+            page.open(ft.SnackBar(ft.Text("DeepRoot te consultará el directorio destino de las conversaciones que descargues."), bgcolor=tm.Color.TeMincyt))
+        page.update()
+
     #: str: Campo de ingreso de consulta o prompt
     input_prompt = ft.TextField(
         #label="Escribe tu consulta",
@@ -661,6 +674,12 @@ async def main(page):
     switch_enter = ft.Switch(
         value=config["usar_enter"],
         on_change=lambda e: on_usar_enter(e)
+    )
+
+    # switch para usar carpeta de descargas predeterminada
+    switch_usar_carpeta_descarga_predeterminada = ft.Switch(
+        value=config["usar_carpeta_descarga_predeterminada"],
+        on_change=lambda e: on_usar_carpeta_descarga_predeterminada(e)
     )
 
     # Lista desplegable para seleccionar el modelo
@@ -710,8 +729,9 @@ async def main(page):
         [
             ft.Text("Enviar Prompt con tecla Enter", size=16, weight=ft.FontWeight.BOLD),
             switch_enter,
-            #btn_guardar_conf,
-            ft.Text("Próxima Versión con muchas funcionalidades de personalización de la Interfáz", size=16, weight=ft.FontWeight.BOLD),
+
+            ft.Text("¿Guardar exportaciones en 'deeproot_exportaciones' (~/Descargas o ~/Downloads)?", size=16, weight=ft.FontWeight.BOLD),
+            switch_usar_carpeta_descarga_predeterminada,
         ],
         spacing=10
     )
@@ -838,30 +858,88 @@ async def main(page):
         page.open(ft.SnackBar(ft.Text("¡Prompt copiado al portapapeles!"), bgcolor=tm.Color.TeMincyt))
         page.update()  # Actualiza la página para mostrar el SnackBar
 
-    # Descarga el chat 
-    def descargar_chat(e:FilePickerResultEvent,path="~/"):
-        ruta_chat_a_guardar = e.path
+
+    def descargar_chat(e: ft.FilePickerResultEvent):
+        global RUTA_ALMACENAMIENTO_CHAT
+
+        ahora = datetime.now()
+        fecha_ahora = ahora.strftime("%Y-%m-%d_%H%M%S")
         historial_chat = get_chat()
-
-        if ruta_chat_a_guardar:
+        if config['usar_carpeta_descarga_predeterminada']:
+            # Modo automático
+            ruta_descargas = os.path.expanduser(RUTA_ALMACENAMIENTO_CHAT)
+            os.makedirs(ruta_descargas, exist_ok=True)
+            nombre_archivo = f"historial_chat_deeproot_{config['modelo']}_{fecha_ahora}.md"
+            archivo_historial_chat_md = os.path.join(ruta_descargas, nombre_archivo)
+            
             try:
-                ahora = datetime.now()
-                fecha_ahora = ahora.strftime("%Y-%m-%d_%H%M%S")
-                archivo_historial_chat_md = f"{ruta_chat_a_guardar}_historial_chat_dr-{dr_platform}_con_{config['modelo']}_{fecha_ahora}.md"
-
-                # Generamos el archivo markdown con el historial del chat
                 with open(archivo_historial_chat_md, "w", encoding="utf-8") as archivo:
                     archivo.write(historial_chat)
-                    print("¡Chat guardado exitosamente!")
-                    page.open(ft.SnackBar(ft.Text(f"Historial de Chat con la IA {config['modelo']} se ha guardado exitosamente en '{archivo_historial_chat_md}'."), bgcolor=tm.Color.TeMincyt))
+                    page.open(
+                        ft.SnackBar(
+                            ft.Text(f"Conversación guardada en: {archivo_historial_chat_md}"),
+                            bgcolor=tm.Color.TeMincyt
+                        )
+                    )
             except Exception as e:
-                page.open(ft.SnackBar(ft.Text(f"Error guardando el archivo: ",e), bgcolor=tm.Color.RojoFuturo))
-            page.update()
+                page.open(
+                    ft.SnackBar(
+                        ft.Text(f"Error guardando archivo: {str(e)}"),
+                        bgcolor=tm.Color.RojoFuturo
+                    )
+                )
+        else:
+            # Modo manual - abre el diálogo de guardado
+            dialogo_guardar_chat.save_file()
+        
+        page.update()
 
 
-    dialogo_guardar_chat = ft.FilePicker(on_result=descargar_chat)
+    # Función para el manejo del resultado del FilePicker
+    def manejador_file_picker_resultado(e: ft.FilePickerResultEvent):
+        if e.path:
+            ahora = datetime.now()
+            fecha_ahora = ahora.strftime("%Y-%m-%d_%H%M%S")
+            nombre_archivo = f"{e.path}_historial_chat_deeproot_{config['modelo']}_{fecha_ahora}.md"
+            archivo_completo = os.path.join(e.path, nombre_archivo)
+            
+            historial_chat = get_chat()
+            try:
+                with open(archivo_completo, "w", encoding="utf-8") as archivo:
+                    archivo.write(historial_chat)
+                    page.open(
+                        ft.SnackBar(
+                            ft.Text(f"Conversación guardada en: {archivo_completo}"),
+                            bgcolor=tm.Color.TeMincyt
+                        )
+                    )
+            except Exception as e:
+                page.open(
+                    ft.SnackBar(
+                        ft.Text(f"Error guardando archivo: {str(e)}"),
+                        bgcolor=tm.Color.RojoFuturo
+                    )
+                )
+        page.update()
+
+
+    # Preparando objeto FilePicker para que plueda ser disparado al pulsar
+    # descagar conversación actual.
+    dialogo_guardar_chat = ft.FilePicker(on_result=manejador_file_picker_resultado)
     page.overlay.append(dialogo_guardar_chat)
 
+    def abrir_descargas(e):
+        """
+        Abre el directorio predeterminado donde se guardan los chat.
+
+        Note: Utiliza el gestor de archivos predeterminado del sistema.
+        En GNU/Linux depende de la configuración de xdg-open (~/.config/mimeapps.list)
+        """
+        global RUTA_ALMACENAMIENTO_CHAT
+        try:
+            subprocess.run(['xdg-open', RUTA_ALMACENAMIENTO_CHAT], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Error al abrir directorio de descargas: {e}")
     
     # comparte el chat a correo electrónico cuando la plataforma de ejecución de la app lo permite.
     def compartir_chat_por_email(e):
@@ -900,7 +978,7 @@ async def main(page):
     # Copiar Respuesta al portapapeles
     def copiar_respuesta(e):
         page.set_clipboard(get_chat())
-        page.open(ft.SnackBar(ft.Text("¡Respuestas copiadas al portapepeles y en formato Markdown!"), bgcolor=tm.Color.TeMincyt))
+        page.open(ft.SnackBar(ft.Text("¡Conversación copiada al portapepeles en formato Markdown!"), bgcolor=tm.Color.TeMincyt))
         page.update()  # Actualiza la página para mostrar el SnackBa Gestion de dialogos de confirmación
 
     def on_resetear_campos(e):
@@ -916,7 +994,7 @@ async def main(page):
         dlg=ft.AlertDialog(
             modal=True,
             title=ft.Text("Por favor confirme"),
-            content=ft.Text("¿Realmente desea iniciar otra conversación? No podrá recuperar las conversaciones anteriores."),
+            content=ft.Text("¿Desea iniciar otra conversación? No podrá recuperar los chats anteriores a menos que los haya descargado."),
             actions=[
                 ft.TextButton("Sí", on_click=confirmar_resetear_campos),
                 ft.TextButton("No", on_click=cerrar_dialogo),
@@ -961,11 +1039,25 @@ async def main(page):
         on_click=enviar_prompt
     )
 
+    # btn_descargar_chat = get_icon_boton_prompt(
+    #         ft.Icons.DOWNLOAD,
+    #         tm.Color.AzulMincyt,
+    #         'Descargar Chat',
+    #     'Descargar Chat',lambda e:dialogo_guardar_chat.save_file()
+    #         )
+
     btn_descargar_chat = get_icon_boton_prompt(
             ft.Icons.DOWNLOAD,
             tm.Color.AzulMincyt,
-            'Descargar Chat',
-        'Descargar Chat',lambda e:dialogo_guardar_chat.save_file()
+            'Descargar historial del chat',
+            'Descargar Chat', descargar_chat
+            )
+
+    btn_abrir_descargas = get_icon_boton_prompt(
+            ft.Icons.FOLDER,
+            tm.Color.AzulMincyt,
+            'Directorio de descargas',
+            'Descargas',abrir_descargas
             )
 
     btn_compartir_chat = get_icon_boton_prompt(
@@ -1035,9 +1127,10 @@ async def main(page):
                 btn_copiar_resp,
                 btn_compartir_chat,
                 btn_descargar_chat,
+                btn_abrir_descargas,
                 btn_reset_prompt,
             ], 
-            spacing=4,
+            spacing=10,
             alignment=ft.MainAxisAlignment.CENTER,
             #scroll=ft.ScrollMode.AUTO,  # Habilita desplazamiento si es largo el contenido
         )
