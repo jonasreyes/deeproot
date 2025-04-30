@@ -1,6 +1,6 @@
 """
 DeepRoot - main.py
-Versión: 0.1.0
+Versión: 0.1.1
 Copyright (C) 2025 Jonás Reyes
 
 Este programa es software libre: puedes redistribuirlo y/o modificarlo
