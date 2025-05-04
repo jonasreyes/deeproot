@@ -224,8 +224,21 @@ EOF
 copiar_scripts() {
     registrar_log "Copiando scripts auxiliares..."
     mkdir -p "${DIR_SCRIPTS}"
-    cp "$(dirname "$0")/deeproot_uninstall.sh" "${DIR_SCRIPTS}/"
-    chmod +x "${DIR_SCRIPTS}/deeproot_uninstall.sh"
+
+    # Obtener el script de desinstalación desde el repositorio clonado
+    local script_desinstalacion="${DIR_INSTALACION}/scripts/deeproot_uninstall.sh"
+    
+    if [[ -f "${script_desinstalacion}" ]]; then
+        cp "${script_desinstalacion}" "${DIR_SCRIPTS}/"
+        chmod +x "${DIR_SCRIPTS}/deeproot_uninstall.sh"
+        registrar_log "Script de desinstalación copiado desde repositorio clonado"
+    else
+        # Plan B: Descargar directamente desde GitHub si falla
+        registrar_log "Descargando script de desinstalación desde GitHub..."
+        curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/scripts/deeproot_uninstall.sh \
+             -o "${DIR_SCRIPTS}/deeproot_uninstall.sh"
+        chmod +x "${DIR_SCRIPTS}/deeproot_uninstall.sh"
+    fi
 }
 
 generar_lanzador() {
