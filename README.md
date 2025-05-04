@@ -1,191 +1,127 @@
-# 🌊 DeepRoot - Una aplicación GUI multimodal diseñada para interactuar con modelos avanzados de IA (LLM) de licencia software libre y código abierto, facilitando el acceso a inteligencia artificial libre, sin censura y altamente personalizable.
+# 🐋 DeepRoot - Interfaz gráfica para interacción con modelos avanzados de IA (LLMs)
+
 [![Licencia](https://img.shields.io/badge/Licencia-DeepRoot_LSS-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
+![Versión](https://img.shields.io/badge/Versión-v0.1.0_Beta-orange)
 
-**Cliente Modelos Avanzados IA (LLM) Licenciados en Software Libre y/o Código Abierto.**  
-*Actualmente compatible con los Modelos de DeepSeek y Google Gemini Flash 2.0 vía API.*
-*Obtener API KEY de DeepSeek: [Plataforma DeepSeek](https://platform.deepseek.com/)*  
-*Obtener API KEY de Google Gemini: [Google AI Studio](https://aistudio.google.com)*  
+**Aplicación de escritorio para interactuar con modelos de IA como DeepSeek y Gemini**  
+*Actualización constante de modelos compatibles vía API*
 
-![Logo de DeepRoot](src/assets/images/deeproot.png)  
+![Logo de DeepRoot](src/assets/images/deeproot_foot.png)  
 *Ballena de DeepRoot - Símbolo de raíces profundas*  
 
 ---
-## 📹 Demo  
-No te pierdas el video demostrativo de la Instalación de DeepRoot:  
-[![Ver Demo](https://img.shields.io/badge/▶-Ver_Video_Demo-red?style=for-the-badge)](https://rutube.ru/video/f59e3cd104a92965b0add83a40c95047/)
+## 📹 Videos Relacionados
+1. **Demo de Instalación**:  
+   [![Ver Demo](https://img.shields.io/badge/▶-Instalación-red?style=for-the-badge)](https://rutube.ru/video/f59e3cd104a92965b0add83a40c95047/)
+2. **Ponencia FLISoL 2025**:  
+   [![Ver Ponencia](https://img.shields.io/badge/▶-FLISoL_2025-blue?style=for-the-badge)](https://rutube.ru/video/f44cd2d55b1a54142cff072faace7133/)
 
-### 🎥 ¿Qué verás en el demo?  
-- Instalación de DeepRoot  
 ---
-
 ## 📌 Tabla de Contenidos
 1. [Filosofía](#-filosofía)
 2. [Características](#-características)
 3. [Instalación](#-instalación)
-4. [Uso Avanzado](#-uso-avanzado)
-5. [Contribuir](#-contribuir)
-6. [Licencia](#-licencia)
+4. [Interfaz](#-interfaz)
+5. [Uso Avanzado](#-uso-avanzado)
+6. [Reportar Problemas](#-reportar-problemas)
+7. [Contribuir](#-contribuir)
+8. [Licencia](#-licencia)
 
 ---
-
 ## 🌍 Filosofía
-### Philosophy / 哲学 / Философия / الفلسفة  
+**DeepRoot** - Herramienta venezolana que democratiza el acceso a IA avanzada mediante software libre. Inspirada en principios de soberanía tecnológica y desarrollo comunitario.
 
-**DeepRoot** nace en Venezuela para democratizar la IA, combinando tecnología avanzada con principios de software libre y justicia social. Inspirado en la resiliencia de comunidades como El Guarataro fundadora del Primer Infocentro Comunitario de Venezuela, busca ser herramienta para la emancipación tecnológica.
-
-### English  
-**DeepRoot**, developed in Venezuela, merges cutting-edge AI with free software ideals. It’s a tool for social transformation, inspired by grassroots movements and licensed for collective empowerment.  
-
-### 中文 (Chinese)  
-**DeepRoot** 诞生于委内瑞拉，结合自由软件与人工智能，致力于技术民主化。受社区韧性启发，遵循开放共享原则，赋能社会变革。  
-
-### Русский (Russian)  
-**DeepRoot** — венесуэльский проект, объединяющий ИИ и свободное ПО для социальных изменений. Лицензия гарантирует свободу использования и модификации.  
-
-### العربية (Arabic)  
-**ديبروت** أداة ذكاء اصطناعي حُرّة من فنزويلا، مصممة لتمكين المجتمعات عبر 
+### Idiomas Disponibles:
+- **English**: Venezuelan-developed GUI for uncensored AI access
+- **中文**: 自由软件AI桌面客户端
+- **Русский**: Свободный графический клиент ИИ
 
 ---
-
 ## 🚀 Características  
 
 ### 🔍 Multi-Modelos  
-- Soporte para **deepseek-chat**, **deepseek-coder**, **deepseek-reasoner**, **gemini-2.0-flash** (ampliaremos progresivamente la lista de modelos) 
-- Configuración dinámica de parámetros (tokens, temperatura)  
+- Soporte para **deepseek-chat**, **deepseek-coder**, **deepseek-reasoner** y **gemini-2.0-flash**  
+- Configuración de parámetros (tokens, temperatura)  
 
 ### 🎨 Personalización  
-- Temas claros/oscuros (`gruvbox`)  
-- Sintaxis de código resaltada  
+- Temas claros/oscuros  
+- Resaltado de sintaxis  
 
 ### 📤 Exportación  
-- Conversaciones en **Markdown** y **HTML**  
-- Compatibilidad con **Obsidian** y **Telegram**  
+- Conversaciones en Markdown/HTML  
+- Compatibilidad con Obsidian  
 
 ---
+## 🖼️ Interfaz Gráfica
 
+![Pantalla Principal](src/assets/images/capture_pantalla_principal.png)  
+*Interfaz principal con áreas de chat y controles*
+
+![Configuración API](src/assets/images/capture_acceso_api.png)  
+*Ingreso de credenciales API*
+
+![Configuración Modelo](src/assets/images/configuracion_modelo.png)  
+*Ajustes avanzados de modelos*
+
+---
 ## 📥 Instalación  
 
 ### Requisitos  
 - **Python 3.8+**  
-- **Zenity** (para diálogos gráficos)  
-- **Git** (opcional, para instalación manual)  
-- **libmpv.so.1** (dependencia de Flet para renderizado multimedia)  
-
-#### 🔧 Solución para `libmpv.so.1` (GNU/Linux)  
-En sistemas donde solo está disponible `libmpv.so.2`, ejecuta:  
-```bash
-sudo ln -s /usr/lib/libmpv.so /usr/lib/libmpv.so.1  # Crea enlace simbólico
-```
-*Más detalles: [Issue #2823 de Flet](https://github.com/flet-dev/flet/issues/2823)*  
-
-> **Nota:** En futuras actualizaciones, esta dependencia se resolverá automáticamente durante la instalación.
-
----
+- **Git** (opcional)  
 
 ### 1. Método Automático  
 ```bash
-curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/scripts/deeproot_install.sh | bash
 ```
 
-### 2. Instalación Manual  
+### 2. Manual  
 ```bash
 git clone https://github.com/jonasreyes/deeproot.git
 cd deeproot
-python3 -m venv .venv
-source .venv/bin/activate  # Canaima/Zsh: usa `. .venv/bin/activate`
-pip install -r requirements.txt
-cd src && python generar_lanzador.py && cd ..
+./scripts/deeproot_install.sh
 ```
 
 ---
-
-## 🔥 Aliases Disponibles  
-Tras la instalación, usa estos comandos en cualquier terminal:  
-```bash
-deeproot           # Inicia DeepRoot
-uninstall-deeproot # Desinstala completamente
-```  
-*Nota:* Cierra y reabre la terminal o ejecuta:  
-```bash
-source ~/.zshrc    # Para Canaima/Zsh
-source ~/.bashrc   # Para Bash
-```
-
----
-
-## 🖥️ Ejecución  
-- **Desde el menú de aplicaciones** (búsca "DeepRoot").  
-- **Desde terminal**:  
-  ```bash
-  deeproot  # Usando el alias
-  # O manualmente:
-  cd deeproot && .venv/bin/python src/main.py
-  ```
-
----
-
 ## 🗑️ Desinstalación  
-Ejecuta:  
 ```bash
-uninstall-deeproot  # Usando el alias
-# O manualmente:
-curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/uninstall.sh | bash
+curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/scripts/deeproot_uninstall.sh | bash
 ```
 
 ---
+## 🐞 Reportar Problemas  
 
-## 📦 Soporte para Distros  
-| Distribución       | Comandos de Instalación                    | Notas                                  |     |
-| ------------------ | ------------------------------------------ | -------------------------------------- | --- |
-| **Canaima/Debian** | `sudo apt install python3-venv git zenity` | Ver solución para `libmpv.so.1`        |     |
-| **Arch Linux**     | `sudo pacman -S python git zenity`         | Usa `libmpv.so.2` con enlace simbólico |     |
-| **Fedora**     | `sudo dnf install python3-virtualenv git zenity`         | Usa `libmpv.so.2` con enlace simbólico |     |
+### Para usuarios noveles:  
+1. **Describe el problema**: Qué esperabas vs qué ocurrió  
+2. **Pasos para reproducirlo**:  
+   ```
+   1. Abrir DeepRoot  
+   2. Ir a Configuración API  
+   3. Ingresar clave inválida  
+   ```  
+3. **Captura de pantalla** (opcional pero útil)  
 
----
-
-## 🐧 Recomendado para Canaima GNU/Linux  
-DeepRoot está optimizado para Canaima GNU/Linux (basado en Debian). Descárgalo [aquí](https://canaima.softwarelibre.gob.ve/).  
-
----
-
-## 🛠 Uso Avanzado
-*Opciones disponibles:*
-- `--model`: Selecciona entre las versiones más recientes de los modelos de DeepSeek (se irán sumando otros modelos).
-- `--max-tokens`: Controla la longitud de respuestas.
-- `--temperature`: Ajusta la creatividad (0.0 a 2.0)
+### Opciones:  
+- [Abrir Issue en GitHub](https://github.com/jonasreyes/deeproot/issues)  
+- [Formulario de Telegram](https://t.me/deeproot_app) (más sencillo)  
 
 ---
+## 🤝 Contribuir  
+1. Haz fork del repositorio  
+2. Crea una rama: `git checkout -b mi-mejora`  
+3. Envía Pull Request  
 
-## 🐛 Reportar Problemas  
-¿Encontraste un error? ¡Abre un [issue en GitHub](https://github.com/jonasreyes/deeproot/issues)! 
-
----
-
-## 🤝 Contribuir
-1. Haz fork del repositorio
-2. Crea una rama (`git checkout -b feature/nueva-funcion`)
-3. Envía un Pull Request
- 
+*¿Primera vez contribuyendo?* [Guía básica](https://guides.github.com/activities/hello-world/)  
 
 ---
-
 ## 📜 Licencia  
-DeepRoot se distribuye bajo la [Licencia DeepRoot](LICENSE), compatible con GPL.  
+[Licencia DeepRoot](LICENSE) (GPL-compatible)  
 
 ---
-
-## 🔗 Enlaces Útiles  
-- **Canal Oficial**: [@deeproot_app](https://t.me/deeproot_app)  
-- **Desarrollador**: [@jonasroot](https://t.me/jonasroot)  
-- **Repositorio**: [github.com/jonasreyes/deeproot](https://github.com/jonasreyes/deeproot)  
+## 🔗 Enlaces  
+- [Canal Oficial](https://t.me/deeproot_app)  
+- [Desarrollador](https://t.me/jonasroot)  
+- [Repositorio](https://github.com/jonasreyes/deeproot)  
 
 *¡Gracias por usar DeepRoot!* 🐋💙  
-
----
-
-*¿Más ayuda? Contacta a [@jonasroot](https://t.me/jonasroot)*
-
-## 🐧 Recomendado para Canaima GNU/Linux
-
----
