@@ -3,7 +3,7 @@
 set -eo pipefail
 
 # --- Constantes ---
-readonly VERSION="0.1.0"
+readonly VERSION="0.2.0"
 readonly TELEGRAM_DEEPROOT="https://t.me/deeproot_app"
 readonly TELEGRAM_CANAIMA="https://t.me/CanaimaGNULinuxOficial"
 readonly LOGO_ASCII=$(cat << "EOF"
@@ -99,17 +99,43 @@ detectar_sistema() {
 
 verificar_libmpv() {
     registrar_log "Buscando libmpv.so.1..."
-    local ruta_libmpv=$(find /usr/lib* /usr/local/lib -name "libmpv.so.1" 2>/dev/null | head -n1)
+    local rutas_busqueda=(
+        "/usr/lib*"
+        "/usr/local/lib"
+        "/opt/lib"
+        "/usr/lib/x86_64-linux-gnu"
+        "/usr/lib64"
+        "/opt/homebrew/lib"
+        "/usr/local/opt"
+    )
+    
+    local ruta_libmpv=$(find "${rutas_busqueda[@]}" -name "libmpv.so*" 2>/dev/null | sort -V | head -n1)
     
     if [[ -n "${ruta_libmpv}" ]]; then
-        echo -e "\n✅ \033[1;32mlibmpv.so.1 encontrado:\033[0m ${ruta_libmpv}"
-        registrar_log "libmpv.so.1 encontrado en ${ruta_libmpv}"
-        return 0
+        case "${ruta_libmpv##*/}" in
+            "libmpv.so.1")
+                echo -e "\n✅ \033[1;32mlibmpv.so.1 encontrado:\033[0m ${ruta_libmpv}"
+                registrar_log "libmpv.so.1 encontrado en ${ruta_libmpv}"
+                ;;
+            *)
+                echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m Se encontró ${ruta_libmpv##*/} pero no libmpv.so.1"
+                echo -e "  ▸ Algunos usuarios crean enlaces simbólicos para solucionar esto:"
+                echo -e "    \033[1mln -s ${ruta_libmpv} ${ruta_libmpv%/*}/libmpv.so.1\033[0m"
+                echo -e "  ▸ \033[1;31mADVERTENCIA:\033[0m Esto puede causar errores silenciosos o reducir el rendimiento"
+                registrar_log "Encontrado ${ruta_libmpv} pero no libmpv.so.1"
+                ;;
+        esac
+        
+        echo -e "\n🔮 \033[1mNota importante:\033[0m"
+        echo -e "  ▸ En futuras versiones, DeepRoot requerirá libmpv.so.1 para funcionalidades multimedia"
+        echo -e "  ▸ Recomendamos usar \033[1mCanaima GNU/Linux\033[0m que incluye esta librería por defecto"
+        echo -e "    gracias al acuerdo con los desarrolladores de DeepRoot"
+        registrar_log "Advertencia sobre requisitos futuros de libmpv.so.1"
     else
-        echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m libmpv.so.1 no encontrado"
-        echo "  ▸ Se instalará la versión ligera (flet-desktop-light)"
-        registrar_log "libmpv.so.1 no encontrado, usando versión ligera"
-        return 1
+        echo -e "\n⚠️  \033[1;33mADVERTENCIA CRÍTICA:\033[0m No se encontró ninguna versión de libmpv.so"
+        echo -e "  ▸ \033[1;31mEn futuras versiones esto impedirá el uso de funciones multimedia\033[0m"
+        echo -e "  ▸ Solución recomendada: Instalar Canaima GNU/Linux o la librería manualmente"
+        registrar_log "No se encontró ninguna versión de libmpv.so"
     fi
 }
 
@@ -134,15 +160,14 @@ configurar_entorno_python() {
     pip install --upgrade pip
     registrar_log "Pip actualizado a versión: $(pip --version | cut -d' ' -f2)"
     
-    if verificar_libmpv; then
-        echo -e "\n📦 \033[1mInstalando dependencias completas...\033[0m"
-        pip install flet-desktop openai asyncio markdown python-dotenv
-    else
-        echo -e "\n📦 \033[1mInstalando dependencias ligeras...\033[0m"
-        pip install flet-desktop-light openai asyncio markdown python-dotenv
-    fi
+    echo -e "\n📦 \033[1mInstalando dependencias...\033[0m"
+    pip install flet-desktop-light openai asyncio markdown python-dotenv
+    registrar_log "Dependencias instaladas (flet-desktop-light forzado)"
     
-    registrar_log "Entorno Python configurado correctamente"
+    registrar_log "Rutas de búsqueda usadas para libmpv: ${rutas_busqueda[*]}"
+    echo -e "\n💡 \033[1mCONSEJO:\033[0m Puedes configurar rutas adicionales con:"
+    echo -e "  \033[1mexport LIBMPV_PATHS=\"/tu/ruta1 /tu/ruta2\"\033[0m"
+    echo -e "  antes de ejecutar el instalador"
 }
 
 crear_directorio_exportaciones() {
@@ -214,6 +239,13 @@ mostrar_resumen() {
     echo -e "\n══════════════════════════════════════════"
     echo -e "✅ \033[1;32mINSTALACIÓN COMPLETADA\033[0m ✅"
     echo -e "══════════════════════════════════════════"
+    
+    echo -e "\n\033[1m⚠️  AVISO IMPORTANTE:\033[0m"
+    echo -e "  ▸ Esta versión usa \033[1mflet-desktop-light\033[0m (sin soporte multimedia)"
+    echo -e "  ▸ \033[1;31mVersiones futuras requerirán libmpv.so.1\033[0m"
+    echo -e "  ▸ Solución recomendada:"
+    echo -e "    - Instalar Canaima GNU/Linux (incluye libmpv.so.1)"
+    echo -e "    - O instalar manualmente la librería"
     
     echo -e "\n\033[1m📂 Estructura de directorios:\033[0m"
     echo -e "  ▸ \033[34m${DIR_INSTALACION}\033[0m (instalación)"
