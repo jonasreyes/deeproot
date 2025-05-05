@@ -554,8 +554,6 @@ async def main(page):
     def get_temperatura():
         return ft.Column(
             controls=[
-                ft.Divider(),
-                col_guia_temperatura,
                 ft.Divider(), 
                 ft.Text(f"Configurar Temperatura del Modelo {config["modelo"]}", size=16, weight="W900"),
                 text_temperatura,
@@ -567,6 +565,7 @@ async def main(page):
                     label="{value}",
                     on_change=temperatura_changed,
                 ),
+                col_guia_temperatura,
             ],
             horizontal_alignment = ft.CrossAxisAlignment.CENTER
         )
@@ -742,6 +741,8 @@ async def main(page):
             ft.Text("Token de Acceso al Servicio API", size=16, weight=ft.FontWeight.BOLD),
             campo_api_key,
             campo_url_base,
+            ft.Text("Seleccione un Modelo compatible con su API_KEY y BASE_URL:", size=16, weight=ft.FontWeight.BOLD),
+            lista_modelos,
             btn_guardar_conf
         ],
         spacing=10,
@@ -758,10 +759,8 @@ async def main(page):
     # espacio configuración API
     tab_config_modelo = ft.Column(
         [
-            ft.Text("Seleccione un Modelo:", size=16, weight=ft.FontWeight.W_900),
-            lista_modelos,
-            campo_max_tokens,
             campo_temperatura,
+            campo_max_tokens,
             btn_guardar_conf
         ],
         spacing=10,
@@ -1188,7 +1187,7 @@ async def main(page):
                 ft.Tab(text="Chat", content=tab_chat),
                 ft.Tab(text="Interfáz", content=tab_interfaz),
                 ft.Tab(text="Acceso API", content=tab_api),
-                ft.Tab(text="Configuración Modelo", content=tab_config_modelo),
+                ft.Tab(text="Parámetros de Modelo", content=tab_config_modelo),
                 ft.Tab(text="Acerca de", content=tab_acerca),
             ],
         ),
