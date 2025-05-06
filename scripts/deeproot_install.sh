@@ -1,5 +1,5 @@
 #!/bin/bash
-# deeproot_install.sh - Instalador Oficial DeepRoot v0.2.0
+# deeproot_install.sh - Instalador Oficial DeepRoot v0.3.0
 set -eo pipefail
 
 # --- Constantes ---
@@ -84,18 +84,52 @@ actualizar_aplicacion() {
 }
 
 detectar_sistema() {
-    registrar_log "Detectando sistema operativo..."
-    if [[ -f "/etc/os-release" ]]; then
-        source "/etc/os-release"
-        echo -e "\n💻 \033[1mSistema detectado:\033[0m"
-        echo -e "  ▸ Distribución: ${PRETTY_NAME:-$ID}"
-        echo -e "  ▸ Kernel: $(uname -r)"
-        registrar_log "Sistema: ${PRETTY_NAME:-$ID}, Kernel: $(uname -r)"
-    else
-        echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m No se pudo detectar la distribución exacta"
-        registrar_log "No se pudo detectar la distribución"
+  registrar_log "Detectando sistema operativo..."
+  if [[ -f "/etc/os-release" ]]; then
+    NAME=$(grep ^NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
+    PRETTY_NAME=$(grep ^PRETTY_NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
+    ID=$(grep ^ID= /etc/os-release | cut -d'=' -f2 | tr -d '"')
+
+    # Manejar el caso en que las variables no se encuentren en /etc/os-release
+    if [[ -z "$NAME" ]]; then
+      NAME="Desconocido"
     fi
+    if [[ -z "$PRETTY_NAME" ]]; then
+      PRETTY_NAME="$ID" # Usar ID como respaldo
+    fi
+    if [[ -z "$ID" ]]; then
+      ID="Desconocido"
+    fi
+
+    echo -e "\n💻 \033[1mSistema detectado:\033[0m"
+    echo -e "  ▸ Distribución: ${PRETTY_NAME:-$ID}"
+    echo -e "  ▸ Kernel: $(uname -r)"
+    registrar_log "Sistema: ${PRETTY_NAME:-$ID}, Kernel: $(uname -r)"
+  else
+    ID="Desconocido" # Asignar "Desconocido" si /etc/os-release no existe
+    echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m No se pudo detectar la distribución exacta"
+    registrar_log "No se pudo detectar la distribución"
+  fi
 }
+
+
+# detectar_sistema() {
+#     registrar_log "Detectando sistema operativo..."
+#     if [[ -f "/etc/os-release" ]]; then
+#         #source "/etc/os-release"
+#         NAME=$(^NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
+#         PRETTY_NAME=$(^PRETTY_NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
+#         ID=$(^ID= /etc/os-release | cut -d'=' -f2 | tr -d '"')
+# 
+#         echo -e "\n💻 \033[1mSistema detectado:\033[0m"
+#         echo -e "  ▸ Distribución: ${PRETTY_NAME:-$ID}"
+#         echo -e "  ▸ Kernel: $(uname -r)"
+#         registrar_log "Sistema: ${PRETTY_NAME:-$ID}, Kernel: $(uname -r)"
+#     else
+#         echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m No se pudo detectar la distribución exacta"
+#         registrar_log "No se pudo detectar la distribución"
+#     fi
+# }
 
 verificar_libmpv() {
     registrar_log "Buscando libmpv.so.1..."
@@ -270,7 +304,7 @@ mostrar_resumen() {
     echo -e "  ▸ Ejecuta \033[1msource ~/.bashrc\033[0m o reinicia la terminal"
     echo -e "  ▸ Para funcionalidad multimedia completa:"
     case "${ID}" in
-        ubuntu|debian) echo "    sudo apt install libmpv1";;
+        canaima|ubuntu|debian|Desconocido) echo "    sudo apt install libmpv1";;
         arch) echo "    sudo pacman -S mpv";;
         fedora) echo "    sudo dnf install mpv-libs";;
         *) echo "    Consulta la documentación de tu distribución";;
