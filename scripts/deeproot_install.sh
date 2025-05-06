@@ -112,25 +112,6 @@ detectar_sistema() {
   fi
 }
 
-
-# detectar_sistema() {
-#     registrar_log "Detectando sistema operativo..."
-#     if [[ -f "/etc/os-release" ]]; then
-#         #source "/etc/os-release"
-#         NAME=$(^NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
-#         PRETTY_NAME=$(^PRETTY_NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
-#         ID=$(^ID= /etc/os-release | cut -d'=' -f2 | tr -d '"')
-# 
-#         echo -e "\n💻 \033[1mSistema detectado:\033[0m"
-#         echo -e "  ▸ Distribución: ${PRETTY_NAME:-$ID}"
-#         echo -e "  ▸ Kernel: $(uname -r)"
-#         registrar_log "Sistema: ${PRETTY_NAME:-$ID}, Kernel: $(uname -r)"
-#     else
-#         echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m No se pudo detectar la distribución exacta"
-#         registrar_log "No se pudo detectar la distribución"
-#     fi
-# }
-
 verificar_libmpv() {
     registrar_log "Buscando libmpv.so.1..."
     local rutas_busqueda=(
