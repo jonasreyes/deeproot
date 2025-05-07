@@ -22,6 +22,8 @@
 1. [Filosofía](#-filosofía)
 2. [Características](#-características)
 3. [Instalación](#-instalación)
+    *   [Guía del Instalador de DeepRoot](#guía-del-instalador-de-deeproot)
+    *   [Resolución de la Dependencia `libmpv.so.1`](#resolución-de-la-dependencia-libmpvso1)
 4. [Interfaz](#-interfaz)
 5. [Uso Avanzado](#-uso-avanzado)
 6. [Reportar Problemas](#-reportar-problemas)
@@ -83,6 +85,78 @@ cd deeproot
 ./scripts/deeproot_install.sh
 ```
 
+### Guía del Instalador de DeepRoot
+
+Para una guía detallada sobre el proceso de instalación, consulta la [Guía del Instalador de DeepRoot](docs/Guia del Instalador de DeepRoot.md). También disponible en formato [PDF](docs/Guia del Instalador de DeepRoot.pdf). Esta guía te proporcionará información paso a paso sobre cómo instalar DeepRoot y solucionar problemas comunes.
+
+### Resolución de la Dependencia `libmpv.so.1`
+
+DeepRoot requiere la librería `libmpv.so.1` para algunas funcionalidades. Si el instalador no la encuentra, sigue estos pasos:
+
+1.  **Intenta instalar el paquete `libmpv1` (o el equivalente) usando el gestor de paquetes de tu distribución:**
+
+    *   **Debian/Ubuntu:**
+
+        ```bash
+        sudo apt update && sudo apt install libmpv1
+        ```
+
+    *   **Arch Linux/Manjaro:**
+
+        ```bash
+        sudo pacman -S mpv
+        ```
+
+    *   **Fedora/RHEL/CentOS:**
+
+        ```bash
+        sudo dnf install mpv-libs
+        ```
+
+    *   **openSUSE/SLES:**
+
+        ```bash
+        sudo zypper install libmpv1
+        ```
+
+    Si no encuentras el paquete `libmpv1`, busca un paquete similar en tu distribución.
+
+2.  **Si ya tienes instalada una versión diferente de `libmpv` (ej: `libmpv.so.2` o `libmpv.so`), puedes crear un enlace simbólico:**
+
+    *   **Identifica la ruta completa de la librería instalada:**
+
+        ```bash
+        ls -l /usr/lib/x86_64-linux-gnu/libmpv.so.2
+        ```
+
+        Reemplaza `/usr/lib/x86_64-linux-gnu/libmpv.so.2` con la ruta correcta de tu librería.
+
+    *   **Crea el enlace simbólico:**
+
+        ```bash
+        sudo ln -s /usr/lib/x86_64-linux-gnu/libmpv.so.2 /usr/lib/x86_64-linux-gnu/libmpv.so.1
+        ```
+
+        Reemplaza `/usr/lib/x86_64-linux-gnu/libmpv.so.2` con la ruta correcta de tu librería.
+
+    **Importante:** Después de crear el enlace simbólico, ejecuta:
+
+    ```bash
+    sudo ldconfig
+    ```
+
+    Esto actualizará el caché de las librerías del sistema.
+
+3.  **Verifica la instalación:**
+
+    ```bash
+    ldconfig -p | grep libmpv
+    ```
+
+    Esto mostrará las librerías `libmpv` instaladas en tu sistema.
+
+**Nota:** El enlace simbólico es una solución temporal. Para la mejor experiencia, instala el paquete nativo de tu distribución.
+
 ---
 ## 🗑️ Desinstalación  
 ```bash
@@ -124,4 +198,4 @@ curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/scripts/dee
 - [Desarrollador](https://t.me/jonasroot)  
 - [Repositorio](https://github.com/jonasreyes/deeproot)  
 
-*¡Gracias por usar DeepRoot!* 🐋💙  
+*¡Gracias por usar DeepRoot!* 

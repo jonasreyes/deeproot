@@ -3,7 +3,7 @@
 set -eo pipefail
 
 # --- Constantes ---
-readonly VERSION="0.2.0"
+readonly VERSION="0.3.0"
 readonly TELEGRAM_DEEPROOT="https://t.me/deeproot_app"
 readonly TELEGRAM_CANAIMA="https://t.me/CanaimaGNULinuxOficial"
 readonly LOGO_ASCII=$(cat << "EOF"
@@ -79,79 +79,133 @@ verificar_instalacion_previa() {
 
 actualizar_aplicacion() {
     echo -e "\n🔄 \033[1mActualizando DeepRoot...\033[0m"
-    (cd "${DIR_INSTALACION}" && git pull && source .venv/bin/activate && pip install --upgrade pip && pip install -U -r requirements.txt)
+    (cd "${DIR_INSTALACION}" && git stash push -u -m "Antes de actualizar" && git pull && source .venv/bin/activate && pip install --upgrade pip && pip install -U -r requirements.txt && git stash pop)
     echo -e "✅ \033[1;32mActualización completada\033[0m"
 }
 
 detectar_sistema() {
-  registrar_log "Detectando sistema operativo..."
-  if [[ -f "/etc/os-release" ]]; then
-    NAME=$(grep ^NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
-    PRETTY_NAME=$(grep ^PRETTY_NAME= /etc/os-release | cut -d'=' -f2 | tr -d '"')
-    ID=$(grep ^ID= /etc/os-release | cut -d'=' -f2 | tr -d '"')
+    registrar_log "Detectando sistema operativo..."
+    
+    # Inicializar variables con valores por defecto
+    NAME="Desconocido"
+    PRETTY_NAME="Distribución Desconocida"
+    ID="desconocido"
+    VERSION_ID=""
 
-    # Manejar el caso en que las variables no se encuentren en /etc/os-release
-    if [[ -z "$NAME" ]]; then
-      NAME="Desconocido"
-    fi
-    if [[ -z "$PRETTY_NAME" ]]; then
-      PRETTY_NAME="$ID" # Usar ID como respaldo
-    fi
-    if [[ -z "$ID" ]]; then
-      ID="Desconocido"
+    # Leer /etc/os-release si existe
+    if [[ -f "/etc/os-release" ]]; then
+        NAME=$(grep -E '^NAME=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
+        PRETTY_NAME=$(grep -E '^PRETTY_NAME=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
+        ID=$(grep -E '^ID=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
+        VERSION_ID=$(grep -E '^VERSION_ID=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
+        
+        # Asignar valores por defecto si alguna variable está vacía
+        [[ -z "$NAME" ]] && NAME="Desconocido"
+        [[ -z "$PRETTY_NAME" ]] && PRETTY_NAME="$NAME"
+        [[ -z "$ID" ]] && ID="desconocido"
     fi
 
     echo -e "\n💻 \033[1mSistema detectado:\033[0m"
-    echo -e "  ▸ Distribución: ${PRETTY_NAME:-$ID}"
+    echo -e "  ▸ Distribución: ${PRETTY_NAME}"
+    [[ -n "$VERSION_ID" ]] && echo -e "  ▸ Versión: ${VERSION_ID}"
     echo -e "  ▸ Kernel: $(uname -r)"
-    registrar_log "Sistema: ${PRETTY_NAME:-$ID}, Kernel: $(uname -r)"
-  else
-    ID="Desconocido" # Asignar "Desconocido" si /etc/os-release no existe
-    echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m No se pudo detectar la distribución exacta"
-    registrar_log "No se pudo detectar la distribución"
-  fi
+    
+    registrar_log "Sistema: ${PRETTY_NAME}, Versión: ${VERSION_ID}, Kernel: $(uname -r), ID: ${ID}"
 }
 
 verificar_libmpv() {
-    registrar_log "Buscando libmpv.so.1..."
+    echo -e "\n🔍 \033[1mVerificando libmpv.so.1...\033[0m"
+    registrar_log "Buscando libmpv.so.1"
+
     local rutas_busqueda=(
-        "/usr/lib*"
-        "/usr/local/lib"
-        "/opt/lib"
-        "/usr/lib/x86_64-linux-gnu"
+        "/usr/lib"
         "/usr/lib64"
-        "/opt/homebrew/lib"
-        "/usr/local/opt"
+        "/usr/lib/x86_64-linux-gnu"
+        "/usr/local/lib"
+        "/usr/local/lib64"
+        "/opt/lib"
+        "/opt/lib64"
     )
-    
-    local ruta_libmpv=$(find "${rutas_busqueda[@]}" -name "libmpv.so*" 2>/dev/null | sort -V | head -n1)
-    
+
+    local ruta_libmpv=""
+    local ruta_libmpv_alternativa=""
+
+    # Buscar en las rutas especificadas
+    for ruta in "${rutas_busqueda[@]}"; do
+        if [[ -f "${ruta}/libmpv.so.1" ]]; then
+            ruta_libmpv="${ruta}/libmpv.so.1"
+            break
+        elif [[ -f "${ruta}/libmpv.so.2" ]]; then
+            ruta_libmpv_alternativa="${ruta}/libmpv.so.2"
+        elif [[ -f "${ruta}/libmpv.so" ]]; then
+            ruta_libmpv_alternativa="${ruta}/libmpv.so"
+        fi
+    done
+
     if [[ -n "${ruta_libmpv}" ]]; then
-        case "${ruta_libmpv##*/}" in
-            "libmpv.so.1")
-                echo -e "\n✅ \033[1;32mlibmpv.so.1 encontrado:\033[0m ${ruta_libmpv}"
-                registrar_log "libmpv.so.1 encontrado en ${ruta_libmpv}"
-                ;;
-            *)
-                echo -e "\n⚠️  \033[1;33mADVERTENCIA:\033[0m Se encontró ${ruta_libmpv##*/} pero no libmpv.so.1"
-                echo -e "  ▸ Algunos usuarios crean enlaces simbólicos para solucionar esto:"
-                echo -e "    \033[1mln -s ${ruta_libmpv} ${ruta_libmpv%/*}/libmpv.so.1\033[0m"
-                echo -e "  ▸ \033[1;31mADVERTENCIA:\033[0m Esto puede causar errores silenciosos o reducir el rendimiento"
-                registrar_log "Encontrado ${ruta_libmpv} pero no libmpv.so.1"
-                ;;
-        esac
-        
-        echo -e "\n🔮 \033[1mNota importante:\033[0m"
-        echo -e "  ▸ En futuras versiones, DeepRoot requerirá libmpv.so.1 para funcionalidades multimedia"
-        echo -e "  ▸ Recomendamos usar \033[1mCanaima GNU/Linux\033[0m que incluye esta librería por defecto"
-        echo -e "    gracias al acuerdo con los desarrolladores de DeepRoot"
-        registrar_log "Advertencia sobre requisitos futuros de libmpv.so.1"
+        echo -e "✅ \033[1;32mVersión correcta encontrada:\033[0m ${ruta_libmpv}"
+        registrar_log "libmpv.so.1 encontrado en ${ruta_libmpv}"
+        return 0
+    elif [[ -n "${ruta_libmpv_alternativa}" ]]; then
+        echo -e "⚠️ \033[1;33mSe encontró una versión diferente de libmpv:\033[0m ${ruta_libmpv_alternativa}"
+        echo -e "\nPara crear el enlace simbólico necesario, copia y pega la siguiente instrucción:"
+        echo -e "\033[1msudo ln -s \"${ruta_libmpv_alternativa}\" \"${ruta_libmpv_alternativa%/*}/libmpv.so.1\"\033[0m"
+        echo -e "\nLuego, vuelve a ejecutar el instalador."
+        registrar_log "Encontrada versión alternativa de libmpv: ${ruta_libmpv_alternativa}. Instrucción de enlace mostrada."
+        return 1
     else
-        echo -e "\n⚠️  \033[1;33mADVERTENCIA CRÍTICA:\033[0m No se encontró ninguna versión de libmpv.so"
-        echo -e "  ▸ \033[1;31mEn futuras versiones esto impedirá el uso de funciones multimedia\033[0m"
-        echo -e "  ▸ Solución recomendada: Instalar Canaima GNU/Linux o la librería manualmente"
-        registrar_log "No se encontró ninguna versión de libmpv.so"
+        echo -e "❌ \033[1;31mNo se encontró libmpv.so.1 en el sistema\033[0m"
+        registrar_log "No se encontró libmpv.so.1 en el sistema"
+        mostrar_ayuda_libmpv
+        return 1
     fi
+}
+
+mostrar_ayuda_libmpv() {
+    echo -e "\n🛠️  \033[1;36mSOLUCIÓN PARA LIBMPV\033[0m"
+    
+    # Usamos la variable ID ya detectada
+    case "${ID}" in
+        debian|ubuntu|canaima|linuxmint|pop|neon|mx|zorin)
+            echo -e "\n\033[1mPara distribuciones basadas en Debian (${PRETTY_NAME}):\033[0m"
+            echo -e "1. Instalar libmpv1:"
+            echo -e "   \033[1msudo apt update && sudo apt install libmpv1\033[0m"
+            echo -e "\nSi no encuentras libmpv1, puedes intentar con libmpv2:"
+            echo -e "   \033[1msudo apt update && sudo apt install libmpv2\033[0m"
+            ;;
+        arch|manjaro|endeavouros)
+            echo -e "\n\033[1mPara Arch Linux/Manjaro (${PRETTY_NAME}):\033[0m"
+            echo -e "1. Instalar mpv:"
+            echo -e "   \033[1msudo pacman -S mpv\033[0m"
+            ;;
+        fedora|rhel|centos|almalinux|rocky)
+            echo -e "\n\033[1mPara Fedora/RHEL/CentOS (${PRETTY_NAME}):\033[0m"
+            echo -e "1. Instalar mpv-libs:"
+            echo -e "   \033[1msudo dnf install mpv-libs\033[0m"
+            ;;
+        opensuse*|sles)
+            echo -e "\n\033[1mPara openSUSE/SLES (${PRETTY_NAME}):\033[0m"
+            echo -e "1. Instalar libmpv1:"
+            echo -e "   \033[1msudo zypper install libmpv1\033[0m"
+            ;;
+        *)
+            echo -e "\n\033[1mPara ${PRETTY_NAME} (${ID}):\033[0m"
+            echo -e "1. Buscar el paquete equivalente a libmpv1 en tu distribución"
+            echo -e "   Ejemplo para buscar: \033[1msudo apt search libmpv || sudo dnf search mpv\033[0m"
+            ;;
+    esac
+
+    echo -e "\n\033[1mSi ya tienes instalada una versión diferente de libmpv (ej: libmpv.so.2 o libmpv.so), puedes crear un enlace simbólico:\033[0m"
+    echo -e "\n1. Primero, identifica la ruta completa de la librería instalada. Por ejemplo:"
+    echo -e "   \033[1mls -l /usr/lib/x86_64-linux-gnu/libmpv.so.2\033[0m"
+    echo -e "\n2. Luego, crea el enlace simbólico (reemplaza la ruta con la correcta):"
+    echo -e "   \033[1msudo ln -s /usr/lib/x86_64-linux-gnu/libmpv.so.2 /usr/lib/x86_64-linux-gnu/libmpv.so.1\033[0m"
+    echo -e "\n\033[1mNotas importantes:\033[0m"
+    echo -e "• Después de instalar o crear el enlace, verifica con: \033[1mldconfig -p | grep libmpv\033[0m"
+    echo -e "• El enlace simbólico es una solución temporal - puede causar problemas"
+    echo -e "• Para la mejor experiencia, instala el paquete nativo de tu distribución"
+    
+    registrar_log "Mostrada ayuda para libmpv.so.1 en ${ID}"
 }
 
 verificar_ollama() {
@@ -168,7 +222,10 @@ verificar_ollama() {
 configurar_entorno_python() {
     registrar_log "Configurando entorno Python..."
     echo -e "\n🐍 \033[1mCreando entorno virtual en .venv...\033[0m"
-    python3 -m venv "${DIR_INSTALACION}/.venv"
+    if ! python3 -m venv "${DIR_INSTALACION}/.venv"; then
+        echo -e "\n❌ \033[1;31mError al crear el entorno virtual. Intenta instalar python3-venv.\033[0m"
+        exit 1
+    fi
     source "${DIR_INSTALACION}/.venv/bin/activate"
     
     echo -e "\n🔄 \033[1mActualizando pip...\033[0m"
@@ -176,12 +233,15 @@ configurar_entorno_python() {
     registrar_log "Pip actualizado a versión: $(pip --version | cut -d' ' -f2)"
     
     echo -e "\n📦 \033[1mInstalando dependencias...\033[0m"
-    pip install flet-desktop-light openai asyncio markdown python-dotenv
+    pip install flet-desktop-light openai asyncio markdown python-dotenv || {
+        echo -e "\n❌ \033[1;31mError al instalar dependencias. Revisa el archivo de registro para más detalles.\033[0m"
+        exit 1
+    }
     registrar_log "Dependencias instaladas (flet-desktop-light forzado)"
     
-    registrar_log "Rutas de búsqueda usadas para libmpv: ${rutas_busqueda[*]}"
+    registrar_log "Rutas de búsqueda usadas para libmpv: $(ldconfig -p | grep libmpv)"
     echo -e "\n💡 \033[1mCONSEJO:\033[0m Puedes configurar rutas adicionales con:"
-    echo -e "  \033[1mexport LIBMPV_PATHS=\"/tu/ruta1 /tu/ruta2\"\033[0m"
+    echo -e "  \033[1mexport LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/tu/ruta1:/tu/ruta2\033[0m"
     echo -e "  antes de ejecutar el instalador"
 }
 
@@ -193,7 +253,10 @@ crear_directorio_exportaciones() {
     elif [ -d "${HOME}/Downloads" ]; then
         DIR_EXPORTACIONES="${HOME}/Downloads/deeproot_exportaciones"
     else
-        DIR_EXPORTACIONES="${HOME}/deeproot_exportaciones"
+        read -p "¿Dónde quieres que se creen las exportaciones? (ruta completa): " DIR_EXPORTACIONES
+        if [[ -z "${DIR_EXPORTACIONES}" ]]; then
+            DIR_EXPORTACIONES="${HOME}/deeproot_exportaciones"
+        fi
     fi
 
     mkdir -p "${DIR_EXPORTACIONES}"
@@ -213,6 +276,7 @@ export DEEP_ROOT_CONFIG_DIR="${DIR_CONFIG}"
 export DEEP_ROOT_EXPORT_DIR="${DIR_EXPORTACIONES}"
 EOF
 
+    # Eliminar aliases existentes y luego crear los nuevos
     for shell_file in ".bashrc" ".zshrc"; do
         if [[ -f "${HOME}/${shell_file}" ]]; then
             sed -i '/# ===== DeepRoot Config =====/,/# ===== Fin DeepRoot =====/d' "${HOME}/${shell_file}"
@@ -240,6 +304,12 @@ copiar_scripts() {
     registrar_log "Configurando script de desinstalación..."
     mkdir -p "${DIR_SCRIPTS}"
     
+    # Verificar si curl está instalado
+    if ! command -v curl &> /dev/null; then
+        echo -e "\n❌ \033[1;31mError: curl no está instalado. Instálalo para descargar el script de desinstalación.\033[0m"
+        exit 1
+    fi
+
     # Siempre descargar la versión más reciente desde GitHub
     curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/scripts/deeproot_uninstall.sh \
          -o "${DIR_SCRIPTS}/deeproot_uninstall.sh"
@@ -298,13 +368,71 @@ mostrar_resumen() {
     registrar_log "Instalación completada exitosamente"
 }
 
+verificar_dependencias_iniciales() {
+    echo -e "\n🔍 \033[1mVerificando dependencias iniciales...\033[0m"
+
+    # Verificar si git está instalado
+    if ! command -v git &> /dev/null; then
+        echo -e "❌ \033[1;31mError: git no está instalado. Instálalo para continuar.\033[0m"
+        case "${ID}" in
+            debian|ubuntu|canaima) echo -e "  \033[1msudo apt install git\033[0m";;
+            arch|manjaro) echo -e "  \033[1msudo pacman -S git\033[0m";;
+            fedora|rhel|centos) echo -e "  \033[1msudo dnf install git\033[0m";;
+            opensuse*) echo -e "  \033[1msudo zypper install git\033[0m";;
+            *) echo -e "  Instala git usando el gestor de paquetes de tu distribución.";;
+        esac
+        exit 1
+    fi
+
+    # Verificar si curl está instalado
+    if ! command -v curl &> /dev/null; then
+        echo -e "❌ \033[1;31mError: curl no está instalado. Instálalo para continuar.\033[0m"
+        case "${ID}" in
+            debian|ubuntu|canaima) echo -e "  \033[1msudo apt install curl\033[0m";;
+            arch|manjaro) echo -e "  \033[1msudo pacman -S curl\033[0m";;
+            fedora|rhel|centos) echo -e "  \033[1msudo dnf install curl\033[0m";;
+            opensuse*) echo -e "  \033[1msudo zypper install curl\033[0m";;
+            *) echo -e "  Instala curl usando el gestor de paquetes de tu distribución.";;
+        esac
+        exit 1
+    fi
+
+    # Verificar si python3 está instalado
+    if ! command -v python3 &> /dev/null; then
+        echo -e "❌ \033[1;31mError: python3 no está instalado. Instálalo para continuar.\033[0m"
+        case "${ID}" in
+            debian|ubuntu|canaima) echo -e "  \033[1msudo apt install python3 python3-venv\033[0m";;
+            arch|manjaro) echo -e "  \033[1msudo pacman -S python\033[0m";;
+            fedora|rhel|centos) echo -e "  \033[1msudo dnf install python3\033[0m";;
+            opensuse*) echo -e "  \033[1msudo zypper install python3\033[0m";;
+            *) echo -e "  Instala python3 usando el gestor de paquetes de tu distribución.";;
+        esac
+        exit 1
+    fi
+}
+
 # --- Flujo principal ---
 main() {
     mostrar_banner
     inicializar_directorios
     verificar_instalacion_previa
     detectar_sistema
-    verificar_libmpv
+    verificar_dependencias_iniciales
+
+    # Bucle para verificar libmpv hasta que se encuentre o el usuario cancele
+    while true; do
+        if verificar_libmpv; then
+            break
+        else
+            read -p "¿Intentar de nuevo la verificación de libmpv? [s/N]: " respuesta
+            if [[ "${respuesta,,}" =~ ^(n|no)$ ]]; then
+                echo -e "\n\033[1;33mADVERTENCIA: DeepRoot podría no funcionar correctamente sin libmpv.so.1\033[0m"
+                echo -e "Continuando sin verificar libmpv."
+                break
+            fi
+        fi
+    done
+
     verificar_ollama
     
     echo -e "\n📥 \033[1mInstalando DeepRoot en:\033[0m \033[1;34m${DIR_INSTALACION}\033[0m"

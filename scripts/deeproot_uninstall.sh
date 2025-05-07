@@ -71,7 +71,14 @@ eliminar_seguro() {
     
     if [[ "${tipo}" == "dir" && -d "${objetivo}" ]]; then
         echo -e "\n📂 \033[1mContenido del directorio a eliminar:\033[0m"
-        tree -L 2 "${objetivo}"
+        
+        # Verificar si 'tree' está instalado
+        if command -v tree &> /dev/null; then
+            tree -L 2 "${objetivo}"
+        else
+            echo -e "\033[1;33m'tree' no está instalado. Mostrando lista de archivos:\033[0m"
+            find "${objetivo}" -maxdepth 2 -print
+        fi
         
         if pregunta_confirmacion "¿Eliminar TODOS los contenidos anteriores?"; then
             echo -e "🗑️  \033[1;31mEliminando...\033[0m"
@@ -93,9 +100,17 @@ limpiar_aliases() {
     for alias_file in "${ALIAS_FILES[@]}"; do
         if [[ -f "${alias_file}" ]]; then
             # Eliminar bloque completo de aliases
-            sed -i '/# ===== DeepRoot Aliases =====/,/# ===== Fin DeepRoot =====/d' "${alias_file}"
+            sed -i '/# ===== DeepRoot Config =====/,/# ===== Fin DeepRoot =====/d' "${alias_file}"
             # Eliminar variable de entorno si existe
-            sed -i '/export DEEP_ROOT_INSTALL_DIR=/d' "${alias_file}"
+            sed -i '/export DEEP_ROOT_INSTALL_DIR=/d' "${alias_file}" "${alias_file}"
+            sed -i '/export DEEP_ROOT_CONFIG_DIR=/d' "${alias_file}"
+            sed -i '/export DEEP_ROOT_EXPORT_DIR=/d' "${alias_file}"
+            # Eliminar aliases individuales (por si acaso)
+            sed -i '/alias deeproot=/d' "${alias_file}"
+            sed -i '/alias deeproot-update=/d' "${alias_file}"
+            sed -i '/alias deeproot-uninstall=/d' "${alias_file}"
+            sed -i '/alias deeproot-logs=/d' "${alias_file}"
+            sed -i '/alias deeproot-exports=/d' "${alias_file}"
             echo -e "✔ \033[1;32mLimpieza completada en:\033[0m ${alias_file}"
         fi
     done
