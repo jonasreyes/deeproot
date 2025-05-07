@@ -34,10 +34,10 @@
 ## 🌍 Filosofía
 **DeepRoot** - Herramienta venezolana que democratiza el acceso a IA avanzada mediante software libre. Inspirada en principios de soberanía tecnológica y desarrollo comunitario.
 
-### Idiomas Disponibles:
-- **English**: Venezuelan-developed GUI for uncensored AI access
-- **中文**: 自由软件AI桌面客户端
-- **Русский**: Свободный графический клиент ИИ
+### Descripción en otros idiomas:
+- **English**: Venezuelan-developed GUI for API access to LLMs.
+- **Chino (Simplificado)**: 委内瑞拉开发的图形用户界面，用于通过 API 访问 LLM 模型。(Wěinèiruìlā kāifā de túxíng yònghù jièmiàn, yòng yú tōngguò API fǎngwèn LLM móxíng.)
+- **Ruso**: Графический интерфейс, разработанный в Венесуэле для доступа к LLM-моделям через API. (Graficheskiy interfeys, razrabotannyy v Venesuele dlya dostupa k LLM-modelyam cherez API.)
 
 ---
 ## 🚀 Características  
