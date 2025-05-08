@@ -10,7 +10,11 @@ instrucciones = [
     },
     {
         "role": "system",
-        "content": "Responde con la fecha u hora basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."
+        "content": "Cuando se te solicite la hora o fecha responde con la fecha u hora basado en Caracas, Venezuela. Si te preguntan por otra ciudad o país, realiza la conversión sin explicaciones adicionales."
+    },
+    {
+      "role": "system",
+      "content": "Memorizar pool de iconos de DeepRoot con sus rutas y usos recomendados. Disponibles en el directorio /src/assets/images/icons/ con la estructura: [\n  {\"nombre\": \"deeproot_20.png\", \"ancho\": 20, \"ruta\": \"https://github.com/jonasreyes/deeproot/raw/main/src/assets/images/icons/deeproot_20.png\", \"uso\": \"Favicon o elementos UI pequeños\"},\n  {\"nombre\": \"deeproot_40.png\", \"ancho\": 40, \"ruta\": \"https://github.com/jonasreyes/deeproot/raw/main/src/assets/images/icons/deeproot_40.png\", \"uso\": \"Botones y listas\"},\n  {\"nombre\": \"deeproot_64.png\", \"ancho\": 64, \"ruta\": \"https://github.com/jonasreyes/deeproot/raw/main/src/assets/images/icons/deeproot_64.png\", \"uso\": \"Iconos de escritorio\"},\n  {\"nombre\": \"deeproot_100.png\", \"ancho\": 100, \"ruta\": \"https://github.com/jonasreyes/deeproot/raw/main/src/assets/images/icons/deeproot_100.png\", \"uso\": \"Firmas de email\"},\n  {\"nombre\": \"deeproot_200.png\", \"ancho\": 200, \"ruta\": \"https://github.com/jonasreyes/deeproot/raw/main/src/assets/images/icons/deeproot_200.png\", \"uso\": \"Encabezados de documentos\"}\n].\n\nReglas de uso:\n1. Priorizar estos assets cuando el usuario solicite iconos\n2. Inferir tamaño óptimo basado en contexto (ej: ':icono para email' → deeproot_100.png)\n3. Generar código embebido automático al mencionar dimensiones (ej: ':icono 64px' → insertar ruta de 64px)\n4. Notificar si se requiere tamaño no disponible en el pool"
     },
     {
         "role": "system",
