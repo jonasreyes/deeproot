@@ -96,66 +96,48 @@ DeepRoot requiere la librería `libmpv.so.1` para algunas funcionalidades. Si el
 1.  **Intenta instalar el paquete `libmpv1` (o el equivalente) usando el gestor de paquetes de tu distribución:**
 
     *   **Debian/Ubuntu:**
-
         ```bash
         sudo apt update && sudo apt install libmpv1
         ```
 
     *   **Arch Linux/Manjaro:**
-
         ```bash
         sudo pacman -S mpv
         ```
 
     *   **Fedora/RHEL/CentOS:**
-
         ```bash
         sudo dnf install mpv-libs
         ```
 
     *   **openSUSE/SLES:**
-
         ```bash
         sudo zypper install libmpv1
         ```
 
-    Si no encuentras el paquete `libmpv1`, busca un paquete similar en tu distribución.
-
-2.  **Si ya tienes instalada una versión diferente de `libmpv` (ej: `libmpv.so.2` o `libmpv.so`), puedes crear un enlace simbólico:**
-
-    *   **Identifica la ruta completa de la librería instalada:**
-
-        ```bash
-        ls -l /usr/lib/x86_64-linux-gnu/libmpv.so.2
-        ```
-
-        Reemplaza `/usr/lib/x86_64-linux-gnu/libmpv.so.2` con la ruta correcta de tu librería.
-
-    *   **Crea el enlace simbólico:**
-
-        ```bash
-        sudo ln -s /usr/lib/x86_64-linux-gnu/libmpv.so.2 /usr/lib/x86_64-linux-gnu/libmpv.so.1
-        ```
-
-        Reemplaza `/usr/lib/x86_64-linux-gnu/libmpv.so.2` con la ruta correcta de tu librería.
-
-    **Importante:** Después de crear el enlace simbólico, ejecuta:
-
+2.  **Si ya tienes instalada una versión diferente de `libmpv` (ej: `libmpv.so.2`), crea un enlace simbólico:**
     ```bash
+    sudo ln -s /usr/lib/x86_64-linux-gnu/libmpv.so.2 /usr/lib/x86_64-linux-gnu/libmpv.so.1
     sudo ldconfig
     ```
 
-    Esto actualizará el caché de las librerías del sistema.
+---
+## 🔧 Uso Avanzado
 
-3.  **Verifica la instalación:**
+### Configuración Inicial de API
+1. **Acceso API**:
+   - Abre la pestaña `Acceso API`
+   - Ingresa tu `key_api`
 
-    ```bash
-    ldconfig -p | grep libmpv
-    ```
+2. **Base URL**:
+   - DeepSeek: `https://api.deepseek.com`
+   - Gemini: `https://generativelanguage.googleapis.com/v1beta/openai/`
 
-    Esto mostrará las librerías `libmpv` instaladas en tu sistema.
+3. **Selección de Modelo**:
+   - Elige modelo compatible con tu API key y Base URL
 
-**Nota:** El enlace simbólico es una solución temporal. Para la mejor experiencia, instala el paquete nativo de tu distribución.
+4. **Guardar**:
+   - Presiona `Guardar` para aplicar cambios
 
 ---
 ## 🗑️ Desinstalación  
@@ -165,20 +147,13 @@ curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/scripts/dee
 
 ---
 ## 🐞 Reportar Problemas  
+1. **Describe el problema**  
+2. **Pasos para reproducirlo**  
+3. **Captura de pantalla** (opcional)  
 
-### Para usuarios noveles:  
-1. **Describe el problema**: Qué esperabas vs qué ocurrió  
-2. **Pasos para reproducirlo**:  
-   ```
-   1. Abrir DeepRoot  
-   2. Ir a Configuración API  
-   3. Ingresar clave inválida  
-   ```  
-3. **Captura de pantalla** (opcional pero útil)  
-
-### Opciones:  
+Opciones:  
 - [Abrir Issue en GitHub](https://github.com/jonasreyes/deeproot/issues)  
-- [Formulario de Telegram](https://t.me/deeproot_app) (más sencillo)  
+- [Formulario de Telegram](https://t.me/deeproot_app)  
 
 ---
 ## 🤝 Contribuir  
@@ -198,4 +173,4 @@ curl -sSL https://raw.githubusercontent.com/jonasreyes/deeproot/main/scripts/dee
 - [Desarrollador](https://t.me/jonasroot)  
 - [Repositorio](https://github.com/jonasreyes/deeproot)  
 
-*¡Gracias por usar DeepRoot!* 
+*¡Gracias por usar DeepRoot!*
