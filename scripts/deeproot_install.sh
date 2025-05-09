@@ -233,7 +233,7 @@ configurar_entorno_python() {
     registrar_log "Pip actualizado a versión: $(pip --version | cut -d' ' -f2)"
     
     echo -e "\n📦 \033[1mInstalando dependencias...\033[0m"
-    pip install flet-desktop-light openai asyncio markdown python-dotenv || {
+    pip install 'flet[desktop-light]==0.27.6' openai asyncio markdown python-dotenv || {
         echo -e "\n❌ \033[1;31mError al instalar dependencias. Revisa el archivo de registro para más detalles.\033[0m"
         exit 1
     }
