@@ -86,31 +86,54 @@ actualizar_aplicacion() {
 detectar_sistema() {
     registrar_log "Detectando sistema operativo..."
     
-    # Inicializar variables con valores por defecto
+    # Valores por defecto robustos
     NAME="Desconocido"
     PRETTY_NAME="Distribución Desconocida"
     ID="desconocido"
     VERSION_ID=""
 
-    # Leer /etc/os-release si existe
-    if [[ -f "/etc/os-release" ]]; then
-        NAME=$(grep -E '^NAME=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
-        PRETTY_NAME=$(grep -E '^PRETTY_NAME=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
-        ID=$(grep -E '^ID=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
-        VERSION_ID=$(grep -E '^VERSION_ID=' /etc/os-release | cut -d'=' -f2- | tr -d '"')
-        
-        # Asignar valores por defecto si alguna variable está vacía
-        [[ -z "$NAME" ]] && NAME="Desconocido"
-        [[ -z "$PRETTY_NAME" ]] && PRETTY_NAME="$NAME"
-        [[ -z "$ID" ]] && ID="desconocido"
+    # Método 1: Usar /etc/os-release si existe y no está vacío
+    if [[ -f "/etc/os-release" && -s "/etc/os-release" ]]; then
+        registrar_log "Leyendo /etc/os-release"
+        # Extracción segura evitando errores de formato
+        while IFS='=' read -r key value; do
+            case "$key" in
+                "NAME") NAME="${value//\"/}" ;;
+                "PRETTY_NAME") PRETTY_NAME="${value//\"/}" ;;
+                "ID") ID="${value//\"/}" ;;
+                "VERSION_ID") VERSION_ID="${value//\"/}" ;;
+            esac
+        done < "/etc/os-release"
+    else
+        registrar_log "/etc/os-release no existe o está vacío"
     fi
+
+    # Método 2: Detección alternativa para Arch Linux/Archcraft
+    if [[ "$ID" == "desconocido" ]] && command -v pacman &>/dev/null; then
+        registrar_log "Detectado gestor de paquetes pacman (Arch Linux/Archcraft)"
+        NAME="Arch Linux"
+        PRETTY_NAME="Arch Linux (o derivado como Archcraft)"
+        ID="arch"
+    fi
+
+    # Método 3: Usar lsb_release si está disponible
+    if [[ "$ID" == "desconocido" ]] && command -v lsb_release &>/dev/null; then
+        registrar_log "Usando lsb_release como fallback"
+        NAME=$(lsb_release -si 2>/dev/null || echo "$NAME")
+        PRETTY_NAME=$(lsb_release -sd 2>/dev/null || echo "$PRETTY_NAME")
+        VERSION_ID=$(lsb_release -sr 2>/dev/null || echo "$VERSION_ID")
+    fi
+
+    # Asegurar valores mínimos
+    PRETTY_NAME="${PRETTY_NAME:-$NAME}"
+    ID="${ID:-desconocido}"
 
     echo -e "\n💻 \033[1mSistema detectado:\033[0m"
     echo -e "  ▸ Distribución: ${PRETTY_NAME}"
     [[ -n "$VERSION_ID" ]] && echo -e "  ▸ Versión: ${VERSION_ID}"
     echo -e "  ▸ Kernel: $(uname -r)"
     
-    registrar_log "Sistema: ${PRETTY_NAME}, Versión: ${VERSION_ID}, Kernel: $(uname -r), ID: ${ID}"
+    registrar_log "Sistema: ${PRETTY_NAME}, Versión: ${VERSION_ID:-N/A}, Kernel: $(uname -r), ID: ${ID}"
 }
 
 verificar_libmpv() {
@@ -233,7 +256,7 @@ configurar_entorno_python() {
     registrar_log "Pip actualizado a versión: $(pip --version | cut -d' ' -f2)"
     
     echo -e "\n📦 \033[1mInstalando dependencias...\033[0m"
-    pip install 'flet[desktop-light]==0.27.6' openai asyncio markdown python-dotenv || {
+    pip install 'flet[desktop]==0.27.6' openai asyncio markdown python-dotenv || {
         echo -e "\n❌ \033[1;31mError al instalar dependencias. Revisa el archivo de registro para más detalles.\033[0m"
         exit 1
     }
