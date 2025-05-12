@@ -14,9 +14,11 @@
 ## 📹 Videos Relacionados
 1. **Demo de Instalación**:  
    [![Ver Demo](https://img.shields.io/badge/▶-Instalación-red?style=for-the-badge)](https://rutube.ru/video/f59e3cd104a92965b0add83a40c95047/)
-2. **Ponencia FLISoL 2025**:  
-   [![Ver Ponencia](https://img.shields.io/badge/▶-FLISoL_2025-blue?style=for-the-badge)](https://rutube.ru/video/f44cd2d55b1a54142cff072faace7133/)
+   [![Ver Instalación Automática](https://img.shields.io/badge/▶-Instalación_Automática-red?style=for-the-badge)](https://rutube.ru/video/a676e7291e85da660158b9b4e87b569f/)
 
+2. **Ponencias FLISoL 2025**:  
+   [![Ver Ponencia en la Universidad Central de Venezuela (28/Abril/2025)](https://img.shields.io/badge/▶-UCV_Caracas_2025-blue?style=for-the-badge)](https://rutube.ru/video/f44cd2d55b1a54142cff072faace7133/)
+   [![Ver Ponencia en la Universidad de Carabobo (09/Mayo/2025)](https://img.shields.io/badge/▶-UC_Carabobo_2025-blue?style=for-the-badge)](https://rutube.ru/video/7bbadb4c10bf7c041e9fe5c0dafa2e48/)
 ---
 ## 📌 Tabla de Contenidos
 1. [Filosofía](#-filosofía)
@@ -108,7 +110,7 @@ cd deeproot
 
 ### Guía del Instalador de DeepRoot
 
-Para una guía detallada sobre el proceso de instalación, consulta la [Guía del Instalador de DeepRoot](docs/Guia del Instalador de DeepRoot.md). También disponible en formato [PDF](docs/Guia del Instalador de DeepRoot.pdf). Esta guía te proporcionará información paso a paso sobre cómo instalar DeepRoot y solucionar problemas comunes.
+Para una guía detallada sobre el proceso de instalación, consulta la [Guía del Instalador de DeepRoot](https://github.com/jonasreyes/deeproot/blob/main/docs/Guia%20del%20Instalador%20de%20DeepRoot.md). Esta guía te proporcionará información paso a paso sobre cómo instalar DeepRoot y solucionar problemas comunes.
 
 ### Resolución de la Dependencia `libmpv.so.1`
 
