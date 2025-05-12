@@ -2,9 +2,9 @@
 
 [![Licencia](https://img.shields.io/badge/Licencia-DeepRoot_LSS-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
-![Versión](https://img.shields.io/badge/Versión-v0.1.0_Beta-orange)
+![Versión](https://img.shields.io/badge/Versión-v0.2.0_Beta-orange)
 
-**Aplicación de escritorio para interactuar con modelos de IA como DeepSeek y Gemini**  
+**Aplicación de escritorio para interactuar con modelos de IA como DeepSeek y Otros**
 *Actualización constante de modelos compatibles vía API*
 
 ![Logo de DeepRoot](src/assets/images/deeproot_foot.png)  
@@ -23,7 +23,7 @@
 2. [Características](#-características)
 3. [Instalación](#-instalación)
     *   [Guía del Instalador de DeepRoot](#guía-del-instalador-de-deeproot)
-    *   [Resolución de la Dependencia `libmpv.so.1`](#resolución-de-la-dependencia-libmpvso1)
+    *   [Resolución de la Dependencia `libmpv.so.1`](#resolución-de-la-dependencia-libmpvso2)
 4. [Interfaz](#-interfaz)
 5. [Uso Avanzado](#-uso-avanzado)
 6. [Reportar Problemas](#-reportar-problemas)
@@ -34,37 +34,57 @@
 ## 🌍 Filosofía
 **DeepRoot** - Herramienta venezolana que democratiza el acceso a IA avanzada mediante software libre. Inspirada en principios de soberanía tecnológica y desarrollo comunitario.
 
+### ¿Qué hace diferente a DeepRoot?
+1. **Enfoque de empoderamiento comunitario**:
+   - No solo es un cliente de IA, es una herramienta para la apropiación social del conocimiento tecnológico.
+   - Diseñada específicamente para integrarse con Canaima GNU/Linux, distribución Venezolana (compatible con cualquier distribución GNU/Linux).
+
+2. **Modelo de desarrollo alternativo**:
+   - Prioriza modelos con licencias libres/open-source.
+   - Permite control completo sobre los parámetros de los modelos (en desarrollo).
+
+1. **Ventajas estratégicas**:
+   - Facilita la experimentación con ingeniería de prompts (en desarrollo).
+   - Ideal para investigación y desarrollo de capacidades locales en IA.
+
 ### Descripción en otros idiomas:
-- **English**: Venezuelan-developed GUI for API access to LLMs.
-- **Chino (Simplificado)**: 委内瑞拉开发的图形用户界面，用于通过 API 访问 LLM 模型。(Wěinèiruìlā kāifā de túxíng yònghù jièmiàn, yòng yú tōngguò API fǎngwèn LLM móxíng.)
-- **Ruso**: Графический интерфейс, разработанный в Венесуэле для доступа к LLM-моделям через API. (Graficheskiy interfeys, razrabotannyy v Venesuele dlya dostupa k LLM-modelyam cherez API.)
+- **English**: Venezuelan-developed GUI for API access to LLMs with focus on technological sovereignty.
+- **Chino (Simplified)**: 委内瑞拉开发的LLM API图形界面，专注于技术主权。(Wěinèiruìlā kāifā de LLM API túxíng jièmiàn, zhuānzhù yú jìshù zhǔquán.)
+- **Ruso**: Венесуэльский графический интерфейс для доступа к LLM через API с акцентом на технологический суверенитет. (Venesuel'skiy graficheskiy interfeys dlya dostupa k LLM cherez API s aktsentom na tekhnologicheskiy suverenitet.)
 
 ---
 ## 🚀 Características  
 
 ### 🔍 Multi-Modelos  
-- Soporte para **deepseek-chat**, **deepseek-coder**, **deepseek-reasoner** y **gemini-2.0-flash**  
-- Configuración de parámetros (tokens, temperatura)  
+- Soporte para **deepseek-chat**, **deepseek-coder**, **deepseek-reasoner** y **gemini-2.0-flash** (pronto habrán más).
+- Configuración de parámetros (tokens, temperatura (pronto serán incorporados más)).
+- Acceso completo a la potencia del modelo vía API (no limitado como chatbots comerciales).
 
 ### 🎨 Personalización  
 - Temas claros/oscuros  
 - Resaltado de sintaxis  
+- Adaptable a diferentes contextos institucionales (universidades, comunidades, planteles educativos, organismos gubernamentales, empresas privadas, entre otros).
 
 ### 📤 Exportación  
 - Conversaciones en Markdown/HTML  
-- Compatibilidad con Obsidian  
+- Ideal para documentar procesos de investigación
+
+### 💡 Características únicas
+- **Desarrollo nacional**: Creado por y para la realidad venezolana.
+- **Formación**: Herramienta pedagógica para aprender IA.
+- **Soberanía**: Alternativa real a plataformas que promueven dependencia.
 
 ---
 ## 🖼️ Interfaz Gráfica
 
 ![Pantalla Principal](src/assets/images/capture_pantalla_principal.png)  
-*Interfaz principal con áreas de chat y controles*
+*Interfaz principal con áreas de chat y controles - Diseñada para usabilidad en entornos educativos*
 
 ![Configuración API](src/assets/images/capture_acceso_api.png)  
-*Ingreso de credenciales API*
+*Ingreso de credenciales API - Compatible con múltiples proveedores*
 
 ![Configuración Modelo](src/assets/images/configuracion_modelo.png)  
-*Ajustes avanzados de modelos*
+*Ajustes avanzados de modelos - Control sobre los parámetros*
 
 ---
 ## 📥 Instalación  
@@ -72,6 +92,7 @@
 ### Requisitos  
 - **Python 3.8+**  
 - **Git** (opcional)  
+- **Canaima GNU/Linux** (recomendado) o cualquier distro Linux
 
 ### 1. Método Automático  
 ```bash
@@ -95,7 +116,7 @@ DeepRoot requiere la librería `libmpv.so.1` para algunas funcionalidades. Si el
 
 1.  **Intenta instalar el paquete `libmpv1` (o el equivalente) usando el gestor de paquetes de tu distribución:**
 
-    *   **Debian/Ubuntu:**
+    *   **Canaima/Debian/Ubuntu:**
         ```bash
         sudo apt update && sudo apt install libmpv1
         ```
@@ -135,9 +156,15 @@ DeepRoot requiere la librería `libmpv.so.1` para algunas funcionalidades. Si el
 
 3. **Selección de Modelo**:
    - Elige modelo compatible con tu API key y Base URL
+   - Recomendado: DeepSeek por su política de acceso más abierta
 
 4. **Guardar**:
    - Presiona `Guardar` para aplicar cambios
+
+### Consejos para investigación:
+- Usa DeepSeek-Coder para desarrollo de software.
+- DeepSeek-Reasoner para análisis complejos (la implementación de este modelo está en desarrollo pero ya puedes realizar consultas con él).
+- Exporta tus conversaciones para documentar hallazgos.
 
 ---
 ## 🗑️ Desinstalación  
@@ -163,6 +190,12 @@ Opciones:
 
 *¿Primera vez contribuyendo?* [Guía básica](https://guides.github.com/activities/hello-world/)  
 
+**Áreas prioritarias para contribuciones:**
+- Traducciones
+- Documentación
+- Pruebas en diferentes distribuciones
+- Desarrollo de nuevas funcionalidades
+
 ---
 ## 📜 Licencia  
 [Licencia DeepRoot](LICENSE) (GPL-compatible)  
@@ -172,5 +205,7 @@ Opciones:
 - [Canal Oficial](https://t.me/deeproot_app)  
 - [Desarrollador](https://t.me/jonasroot)  
 - [Repositorio](https://github.com/jonasreyes/deeproot)  
+- [Sumarse a la Iniciativa Patria y Software Libre](https://forms.yandex.com/u/6744ba73f47e73bf11681c4e/)
 
-*¡Gracias por usar DeepRoot!*
+*"DeepRoot es más que software, es un proyecto de soberanía tecnológica"*  
+*¡Gracias por usar DeepRoot y ser parte de este movimiento!*
