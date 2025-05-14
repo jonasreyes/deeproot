@@ -1,6 +1,6 @@
 """
 DeepRoot - main.py
-Versión: 0.1.1
+Versión: 0.2.1
 Copyright (C) 2025 Jonás Reyes
 
 Este programa es software libre: puedes redistribuirlo y/o modificarlo
@@ -89,7 +89,12 @@ def cargar_configuracion():
         "url_base": "",
         "stream": True,
         "max_tokens": 8192, # por defecto usa 4096, otros números: 2048, 1024, 512
-        "temperature":0.0 
+        "temperature":0.0,
+        "top_p":0.7,
+        "top_k":50, # admite valores enteros entre 1 y 100, podría no ser configurable. Configuración avanzada de modelo
+        "frequency_penalty",# Configuración avanzada de modelo
+        "presence_penalty", # Configuración avanzada de modelo
+        "seed":10 # Configuración avanzada de modelo
     }
 
 # Guardar configuración
