@@ -92,8 +92,8 @@ def cargar_configuracion():
         "temperature":0.0,
         "top_p":0.7,
         "top_k":50, # admite valores enteros entre 1 y 100, podría no ser configurable. Configuración avanzada de modelo
-        "frequency_penalty",# Configuración avanzada de modelo
-        "presence_penalty", # Configuración avanzada de modelo
+        "frequency_penalty":0,# Configuración avanzada de modelo
+        "presence_penalty":0, # Configuración avanzada de modelo
         "seed":10 # Configuración avanzada de modelo
     }
 
@@ -696,7 +696,8 @@ async def main(page):
             ft.dropdown.Option("gemini-2.0-flash"), # Usuarios deben obtener su API Key en Google AI Studio: https://aistudio.google.com
             #ft.dropdown.Option("qwen/qwen2.5-vl-72b-instruct:free"), # Se deshabilita hasta que concluyan las pruebas con los modelos Qwen.
         ],
-        on_change=lambda e: actualizar_configuracion("modelo", e.control.value),
+        #on_change=lambda e: actualizar_configuracion("modelo", e.control.value),
+        on_change=lambda e: cambiar_modelo(e),
         
     )
 
@@ -713,6 +714,7 @@ async def main(page):
     campo_url_base = ft.TextField(
         label="URL Base", 
         value=config["url_base"],
+        disabled=True,
         bgcolor= lambda e: tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
     )
 
@@ -803,6 +805,25 @@ async def main(page):
         config[clave] = valor
         guardar_configuracion(config)
         page.update()
+
+    # Permite setear automáticamente el campo base_url de acuerdo al modelo seleccionado
+    def cambiar_modelo(e):
+        gemini_url_base = 'https://generativelanguage.googleapis.com/v1beta/openai/'
+        deepseek_url_base = 'https://api.deepseek.com/'
+
+        if e.control.value == "gemini-2.0-flash":
+            campo_url_base.value = gemini_url_base
+        else:
+            campo_url_base.value = deepseek_url_base
+
+        config['modelo'] = e.control.value
+        guardar_configuracion(config)
+        page.update()
+
+
+
+
+
 
     # Función de aplicación del theme
     def aplicar_theme(theme):
