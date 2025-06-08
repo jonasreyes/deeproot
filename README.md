@@ -2,7 +2,7 @@
 
 [![Licencia](https://img.shields.io/badge/Licencia-DeepRoot_LSS-blue)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-green)
-![Versión](https://img.shields.io/badge/Versión-v0.2.0_Beta-orange)
+![Versión](https://img.shields.io/badge/Versión-v0.2.3_Beta-orange)
 
 **Aplicación de escritorio para interactuar con modelos de IA como DeepSeek y Otros**
 *Actualización constante de modelos compatibles vía API*
@@ -19,6 +19,9 @@
 2. **Ponencias FLISoL 2025**:  
    [![Ver Ponencia en la Universidad Central de Venezuela (28/Abril/2025)](https://img.shields.io/badge/▶-UCV_Caracas_2025-blue?style=for-the-badge)](https://rutube.ru/video/f44cd2d55b1a54142cff072faace7133/)
    [![Ver Ponencia en la Universidad de Carabobo (09/Mayo/2025)](https://img.shields.io/badge/▶-UC_Carabobo_2025-blue?style=for-the-badge)](https://rutube.ru/video/7bbadb4c10bf7c041e9fe5c0dafa2e48/)
+
+3. **Entrevistas 2025**:  
+   [![PodCast "Más Allá del Código (28/Abril/2025)](https://img.shields.io/badge/▶-PODCAST_Más_Allá_del_Código-blue?style=for-the-badge)](https://youtu.be/pG4Gq39AmY4?si=0VzZoBPugqYpz3EL)
 ---
 ## 📌 Tabla de Contenidos
 1. [Filosofía](#-filosofía)
