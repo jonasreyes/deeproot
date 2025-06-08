@@ -19,6 +19,7 @@ def generar_prompt_oculto(prompt, config):
     - Fecha más reciente: {fecha_mas_reciente},
     - Modelo: {config["modelo"]}
     - Temperatura: {config["temperature"]}
+    - Top_P: {config["top_p"]}
     - Máximo de Tokens: {config["max_tokens"]}
     - Streaming: {config["stream"]}
     - URL Base: {config["url_base"]}
