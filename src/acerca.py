@@ -1,5 +1,5 @@
 resumen="""
-DeepRoot - Versión 0.1.0
+DeepRoot - Versión 0.2.3
 Copyright (C) 2025 Jonás Antonio Reyes Casanova
 
 Cliente de Modelos Avanzados de Inteligencia Artificial (LLM) Licenciados en Software Libre y de Código Abierto.
