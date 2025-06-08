@@ -1,4 +1,4 @@
 flet-desktop-light==0.27.6
-openai==1.75.0
-asyncio==3.4.3
-Markdown==3.8
+openai
+asyncio
+Markdown
