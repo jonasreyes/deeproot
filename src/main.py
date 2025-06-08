@@ -1,6 +1,6 @@
 """
 DeepRoot - main.py
-Versión: 0.2.1
+Versión: 0.2.3
 Copyright (C) 2025 Jonás Reyes
 
 Este programa es software libre: puedes redistribuirlo y/o modificarlo
@@ -86,11 +86,11 @@ def cargar_configuracion():
         "code_theme_oscuro": "gruvbox-dark",
         "extension_set": "gitHubWeb",
         "api_key": "",
-        "url_base": "",
+        "url_base": "https://api.deepseek.com/",
         "stream": True,
         "max_tokens": 8192, # por defecto usa 4096, otros números: 2048, 1024, 512
-        "temperature":0.0,
-        "top_p":0.7,
+        "temperature":0.8,
+        "top_p":0.95,
         "top_k":50, # admite valores enteros entre 1 y 100, podría no ser configurable. Configuración avanzada de modelo
         "frequency_penalty":0,# Configuración avanzada de modelo
         "presence_penalty":0, # Configuración avanzada de modelo
@@ -142,8 +142,8 @@ async def main(page):
     dr_platform = get_platform(page, APP_NAME, APP_LEMA)
     locale.setlocale(locale.LC_TIME, 'es_VE.UTF-8') if dr_platform != "macos" else None #Deshabilitamos la localización profunda si el se deeproot se ejecuta desde MacOS ya que este sistema da problemas con locale.
     page.window.center()
-    page.theme_mode = ft.ThemeMode.DARK
-    page.window.width = 1024
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.window.width = 768
     page.window.height = 768
     page.padding = 20
     page.vertical_alignment = ft.MainAxisAlignment.SPACE_BETWEEN
@@ -395,8 +395,10 @@ async def main(page):
             # Obtenemos la respuesta de la IA en streaming
             respuesta = client.chat.completions.create(
                 model=config["modelo"],
+                reasoning_effort="none", # solo compatible con modelos de Google, otros valores: low, medium, high
                 messages=historial_conversacion,
                 temperature=config["temperature"],
+                top_p=config["top_p"],
                 stream=config["stream"],
                 max_tokens=config["max_tokens"]
             )
@@ -475,7 +477,15 @@ async def main(page):
         return ft.Column(
             controls=[
                 ft.Divider(),
+                ft.Divider(),
                 ft.Text("Configure el Máximo de Tokens", size=16, weight="W900"),
+                ft.Text("El parámetro MAX_TOKENS controla la longitud máxima de la respuesta generada por un modelo LLM. "
+    "Define el número máximo de tokens (unidades de texto, como palabras o caracteres) que el modelo puede producir. "
+    "Valores más altos permiten respuestas más extensas, pero consumen más recursos computacionales. "
+    "Es clave para balancear entre completitud y eficiencia.\n\n"
+    "Ejemplo: max_tokens=100 limita la salida a ~100 tokens.",
+                        selectable=True
+                        ),
                 text_max_tokens,
                 ft.Slider(
                     min=1,  # Evitar valores inválidos desde el inicio
@@ -495,7 +505,22 @@ async def main(page):
 
     # Tabla de configuración de Temperatura
     col_guia_temperatura = ft.Column([
-        ft.Text("Guía de Temperaturas en IA por Actividad", size=16, weight="W900"),
+        ft.Text(),
+        ft.Text("Guía de configuración del parámetro Temperature", size=16, weight="W900"),
+        ft.Text(
+            value="""Temperature en LLMs (como el modelo DeepSeek en la aplicación DeepRoot) controla qué tan 'creativas' o 'predecibles' son mis respuestas:
+                • Baja (ej. 0.1): 
+                - Respondo como un manual técnico.
+                - Siempre elijo la opción más segura.
+                - Ideal para código exacto o datos precisos.
+                
+                • Alta (ej. 0.9 como ahora):
+                - Pienso fuera de la caja.
+                - Mis respuestas son más variadas.
+                - Perfecto para brainstorming o ideas originales.""",
+            size=14,
+            selectable=True,
+        ),
         ft.Container(
         content = ft.DataTable(
                 ref=ref_col_guia_temperatura,
@@ -559,8 +584,8 @@ async def main(page):
     def get_temperatura():
         return ft.Column(
             controls=[
-                ft.Divider(), 
-                ft.Text(f"Configurar Temperatura del Modelo {config["modelo"]}", size=16, weight="W900"),
+                col_guia_temperatura,
+                ft.Text(f"Configurar Temperature, modelo: {config["modelo"]}", size=16, weight="W900"),
                 text_temperatura,
                 ft.Slider(
                     min=0,  # Evitar valores inválidos desde el inicio
@@ -570,10 +595,112 @@ async def main(page):
                     label="{value}",
                     on_change=temperatura_changed,
                 ),
-                col_guia_temperatura,
             ],
             horizontal_alignment = ft.CrossAxisAlignment.CENTER
         )
+
+    # referencia de la data table
+    ref_col_guia_top_p = ft.Ref[ft.DataTable]()
+
+    # Tabla de configuración de Top-P
+    col_guia_top_p = ft.Column([
+        ft.Container(
+            content=ft.DataTable(
+                ref=ref_col_guia_top_p,
+                columns=[
+                    ft.DataColumn(ft.Text("RANGO")),
+                    ft.DataColumn(ft.Text("EFECTO")),
+                    ft.DataColumn(ft.Text("CASO DE USO")),
+                ],
+                rows=[
+                    ft.DataRow(
+                        cells=[
+                            ft.DataCell(ft.Text("0.1 - 0.3")),
+                            ft.DataCell(ft.Text("Muy conservador")),
+                            ft.DataCell(ft.Text("Respuestas técnicas precisas")),
+                        ]
+                    ),
+                    ft.DataRow(
+                        cells=[
+                            ft.DataCell(ft.Text("0.4 - 0.6")),
+                            ft.DataCell(ft.Text("Balanceado")),
+                            ft.DataCell(ft.Text("Análisis de datos, traducción")),
+                        ]
+                    ),
+                    ft.DataRow(
+                        cells=[
+                            ft.DataCell(ft.Text("0.7 - 0.8")),
+                            ft.DataCell(ft.Text("Creativo controlado")),
+                            ft.DataCell(ft.Text("Redacción profesional")),
+                        ]
+                    ),
+                    ft.DataRow(
+                        cells=[
+                            ft.DataCell(ft.Text("0.9 - 1.0")),
+                            ft.DataCell(ft.Text("Máxima creatividad")),
+                            ft.DataCell(ft.Text("Escritura creativa, brainstorming")),
+                        ]
+                    ),
+                ],
+                heading_row_color=tm.Color.AzulCian if page.theme_mode == ft.ThemeMode.LIGHT else tm.Color.AzulEgipcio,
+                heading_row_height=40,
+            ),
+            border_radius=10,
+        )
+    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+
+    # Variable para mostrar el valor actual de top_p
+    text_top_p = ft.Text(f"TOP_P: {config['top_p']}", size=20, weight="W900")
+    
+    # Función para manejar el cambio en el slider de temperatura
+    def top_p_changed(e):
+        new_top_p = round(e.control.value, 2)
+        config["top_p"] = new_top_p
+        text_top_p.value = f"TOP_P: {new_top_p}"
+        
+        page.update()
+    
+    # Función para generar el control de configuración de temperatura
+    def get_top_p():
+        top_p_column = ft.Column(
+            controls=[
+                ft.Divider(),
+                ft.Divider(),
+                ft.Text("Guía de Configuración del parámetro Top-P", size=16, weight="W900"),
+                ft.Text("""TOP-P: CONTROL DE CALIDAD EN RESPUESTAS
+Qué hace:
+• Filtro inteligente que selecciona solo las opciones más relevantes
+• Evita respuestas absurdas o de baja probabilidad
+
+Técnicamente:
+1. El modelo genera una lista de palabras posibles
+2. Las ordena de mayor a menor probabilidad
+3. Suma las probabilidades hasta alcanzar el valor P
+                        """,
+            size=14,
+            selectable=True
+                        ),
+                col_guia_top_p,
+                ft.Text(f"Configurar Top-P, modelo: {config['modelo']}", size=16, weight="W900"),
+                text_top_p,
+                ft.Slider(
+                    min=0,
+                    max=1,
+                    divisions=20,
+                    value=config["top_p"],
+                    label="{value}",
+                    on_change=top_p_changed,
+                ),
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=10
+        )
+        
+        # Forzar actualización inicial
+        if page is not None:
+            page.update()
+        
+        return top_p_column
 
 
     btn_ir_al_final = ft.FloatingActionButton(
@@ -689,12 +816,18 @@ async def main(page):
     # Lista desplegable para seleccionar el modelo
     lista_modelos = ft.Dropdown(
         value=config["modelo"],
+        enable_filter=True,
+        editable=True,
+        leading_icon=ft.Icons.SEARCH,
+        label="Modelo",
         options=[
-            ft.dropdown.Option("deepseek-chat"),
-            ft.dropdown.Option("deepseek-coder"),
-            ft.dropdown.Option("deepseek-reasoner"),
-            ft.dropdown.Option("gemini-2.0-flash"), # Usuarios deben obtener su API Key en Google AI Studio: https://aistudio.google.com
+            ft.DropdownOption("deepseek-chat"),
+            ft.DropdownOption("deepseek-coder"),
+            ft.DropdownOption("deepseek-reasoner"),
+            ft.DropdownOption("gemini-2.0-flash"), # Usuarios deben obtener su API Key en Google AI Studio: https://aistudio.google.com
             #ft.dropdown.Option("qwen/qwen2.5-vl-72b-instruct:free"), # Se deshabilita hasta que concluyan las pruebas con los modelos Qwen.
+            ft.DropdownOption("gemini-2.5-flash-preview-05-20"),
+            ft.DropdownOption("MiniMax-Text-01")
         ],
         #on_change=lambda e: actualizar_configuracion("modelo", e.control.value),
         on_change=lambda e: cambiar_modelo(e),
@@ -762,11 +895,14 @@ async def main(page):
     # Slider para configurar la temperatura del modelo
     campo_temperatura = get_temperatura()
 
+    # Slider para configurar el TOP_P del Modelo
+    campo_top_p = get_top_p()
 
     # espacio configuración API
     tab_config_modelo = ft.Column(
         [
             campo_temperatura,
+            campo_top_p,
             campo_max_tokens,
             btn_guardar_conf
         ],
@@ -810,9 +946,12 @@ async def main(page):
     def cambiar_modelo(e):
         gemini_url_base = 'https://generativelanguage.googleapis.com/v1beta/openai/'
         deepseek_url_base = 'https://api.deepseek.com/'
+        minimax_url_base = 'https://api.minimaxi.chat/v1'
 
-        if e.control.value == "gemini-2.0-flash":
+        if e.control.value == "gemini-2.0-flash" or e.control.value == "gemini-2.5-flash-preview-05-20":
             campo_url_base.value = gemini_url_base
+        elif e.control.value == "MiniMax-Text-01":
+            campo_url_base.value = minimax_url_base
         else:
             campo_url_base.value = deepseek_url_base
 
@@ -840,6 +979,7 @@ async def main(page):
             CODE_THEME = CODE_THEME_OSCURO
             theme_mode = "dark"
             ref_col_guia_temperatura.current.heading_row_color = tm.Color.AzulEgipcio
+            ref_col_guia_top_p.current.heading_row_color = tm.Color.AzulEgipcio
             #print(f"cambiar_theme disparado - Theme Actual: ThemeMode.LIGHT")
         else:
             page.theme_mode = ft.ThemeMode.LIGHT
@@ -847,6 +987,7 @@ async def main(page):
             CODE_THEME = CODE_THEME_CLARO
             theme_mode = "light"
             ref_col_guia_temperatura.current.heading_row_color = tm.Color.AzulCian
+            ref_col_guia_top_p.current.heading_row_color = tm.Color.AzulCian
             #print(f"cambiar_theme disparado - Theme Actual: ThemeMode.DARK")
             
 
